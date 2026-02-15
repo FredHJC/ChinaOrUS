@@ -36,6 +36,12 @@ class SubmitResponse(BaseModel):
     chart_data: ChartData
 
 
+class ScatterPointOut(BaseModel):
+    us_score: float
+    cn_score: float
+    quadrant: str
+
+
 class ResultResponse(BaseModel):
     session_id: str
     age: int

@@ -1,10 +1,10 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { Button, Card, Typography, Space, Spin, Tag, message } from 'antd';
+import { Button, Card, Typography, Space, Spin, Tag, QRCode, message } from 'antd';
 import { CameraOutlined, RedoOutlined, GlobalOutlined, HomeOutlined } from '@ant-design/icons';
 import html2canvas from 'html2canvas';
 import ScatterChart from '../components/ScatterChart';
-import { getResult } from '../api';
+import { getResult, getScatterData } from '../api';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -20,10 +20,15 @@ export default function Result() {
   const location = useLocation();
   const navigate = useNavigate();
   const [data, setData] = useState(location.state || null);
+  const [allPoints, setAllPoints] = useState([]);
   const [loading, setLoading] = useState(!location.state);
   const [exporting, setExporting] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const exportRef = useRef(null);
+
+  useEffect(() => {
+    getScatterData().then(setAllPoints).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!data && sessionId) {
@@ -99,7 +104,7 @@ export default function Result() {
 
         {/* 四象限图 */}
         <Card style={{ marginBottom: 24, borderRadius: 12 }}>
-          <ScatterChart chartData={data.chart_data} quadrant={data.quadrant} />
+          <ScatterChart chartData={data.chart_data} quadrant={data.quadrant} allPoints={allPoints} />
         </Card>
 
         {/* 诊断结果 */}
@@ -126,6 +131,30 @@ export default function Result() {
           <Text type="secondary" style={{ fontSize: 12 }}>
             本测试结果仅供参考，不构成任何专业建议。人生决策请综合考虑更多因素。
           </Text>
+        </div>
+
+        {/* 网站二维码 */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          marginTop: 20,
+          gap: 12,
+        }}>
+          <div style={{ textAlign: 'right' }}>
+            <Text style={{ fontSize: 13, fontWeight: 'bold', display: 'block' }}>
+              扫码测一测
+            </Text>
+            <Text type="secondary" style={{ fontSize: 11 }}>
+              chinaorus.com
+            </Text>
+          </div>
+          <QRCode
+            value="https://chinaorus.com/"
+            size={80}
+            bordered={false}
+            color="#333"
+          />
         </div>
       </div>
 

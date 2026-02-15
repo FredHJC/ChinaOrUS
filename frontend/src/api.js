@@ -19,6 +19,11 @@ export async function getResult(sessionId) {
   return res.data;
 }
 
+export async function getScatterData() {
+  const res = await api.get('/scatter-data');
+  return res.data;
+}
+
 export function getExportUrl(sessionId) {
   return `/api/export/${sessionId}`;
 }

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session as DBSession
 from database import Base, engine, get_db
 from models import Answer, Session
 from questions import get_questions_for_frontend
-from schemas import ResultResponse, SubmitRequest, SubmitResponse, ChartData
+from schemas import ResultResponse, SubmitRequest, SubmitResponse, ChartData, ScatterPointOut
 from scoring import calculate_scores
 from export import generate_pdf
 
@@ -91,6 +91,20 @@ def submit_answers(req: SubmitRequest, db: DBSession = Depends(get_db)):
             threshold=result["threshold"],
         ),
     )
+
+
+@app.get("/api/scatter-data", response_model=list[ScatterPointOut])
+def get_scatter_data(db: DBSession = Depends(get_db)):
+    """返回所有 session 的散点数据（仅坐标与象限）"""
+    sessions = db.query(
+        Session.us_total_score,
+        Session.cn_total_score,
+        Session.quadrant,
+    ).all()
+    return [
+        ScatterPointOut(us_score=s.us_total_score, cn_score=s.cn_total_score, quadrant=s.quadrant)
+        for s in sessions
+    ]
 
 
 @app.get("/api/result/{session_id}", response_model=ResultResponse)
