@@ -1,19 +1,19 @@
 """计分引擎：权重映射、总分计算、象限判定、诊断话术"""
 
-from questions import get_age_scores, get_option_scores
+from questions import get_age_scores, get_dual_scores, get_option_scores
 
 # 权重 -> 乘数映射
 WEIGHT_MULTIPLIER = {
-    5: 2.0,
-    4: 1.75,
-    3: 1.5,
-    2: 1.25,
-    1: 1.0,
+    5: 1.7,   # 核心诉求
+    4: 1.2,   # 比较看重
+    3: 1.0,   # 一般
+    2: 0.8,   # 不太看重
+    1: 0.3,   # 无所谓
 }
 
-# 25 题，每题 base 1-5，multiplier 1.0-2.0
-# 中立基准 = 25题 × base3 × multiplier1.5 = 112.5
-THRESHOLD = 112.5
+# 26 题，每题 base 1-5，multiplier 0.3-1.7
+# 中立基准 = 26题 × base3 × multiplier1.0 = 78
+THRESHOLD = 78.0
 
 DIAGNOSIS = {
     "us_high_cn_low": (
@@ -38,43 +38,43 @@ DIAGNOSIS = {
     ),
 }
 
+# 年龄题固定权重
+AGE_AUTO_WEIGHT = 3
 
-def calculate_scores(age: int, age_weight: int, answers: list[dict]) -> dict:
+
+def calculate_scores(
+    age: int,
+    dual_answers: list[dict],
+    single_answers: list[dict],
+) -> dict:
     """
     计算 US / CN 总分并判定象限。
 
     参数:
-        age: 用户年龄 (20-35)
-        age_weight: 年龄题的权重 (1-5)
-        answers: [{"question_id": int, "selected_option": str, "weight": int}, ...]
-
-    返回:
-        {
-            "us_total_score": float,
-            "cn_total_score": float,
-            "quadrant": str,
-            "quadrant_label": str,
-            "diagnosis": str,
-            "threshold": float,
-        }
+        age: 用户年龄 (20+)
+        dual_answers: [{"question_id": int, "us_tier": int, "cn_tier": int, "weight": int}]
+        single_answers: [{"question_id": int, "selected_option": str, "weight": int}]
     """
     us_total = 0.0
     cn_total = 0.0
 
-    # 年龄题计分
+    # 年龄题计分（自动权重）
     us_base, cn_base = get_age_scores(age)
-    multiplier = WEIGHT_MULTIPLIER[age_weight]
+    multiplier = WEIGHT_MULTIPLIER[AGE_AUTO_WEIGHT]
     us_total += us_base * multiplier
     cn_total += cn_base * multiplier
 
-    # 24 道选择题计分
-    for ans in answers:
-        qid = ans["question_id"]
-        option = ans["selected_option"]
-        weight = ans["weight"]
+    # 双轴题计分
+    for ans in dual_answers:
+        us_base, cn_base = get_dual_scores(ans["question_id"], ans["us_tier"], ans["cn_tier"])
+        multiplier = WEIGHT_MULTIPLIER[ans["weight"]]
+        us_total += us_base * multiplier
+        cn_total += cn_base * multiplier
 
-        us_base, cn_base = get_option_scores(qid, option)
-        multiplier = WEIGHT_MULTIPLIER[weight]
+    # 单选题计分
+    for ans in single_answers:
+        us_base, cn_base = get_option_scores(ans["question_id"], ans["selected_option"])
+        multiplier = WEIGHT_MULTIPLIER[ans["weight"]]
         us_total += us_base * multiplier
         cn_total += cn_base * multiplier
 

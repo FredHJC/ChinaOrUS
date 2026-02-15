@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
@@ -33,10 +35,10 @@ def get_questions():
 @app.post("/api/submit", response_model=SubmitResponse)
 def submit_answers(req: SubmitRequest, db: DBSession = Depends(get_db)):
     """提交答案，计算分数并存储"""
-    answers_dicts = [a.model_dump() for a in req.answers]
-    result = calculate_scores(req.age, req.age_weight, answers_dicts)
+    dual_dicts = [a.model_dump() for a in req.dual_answers]
+    single_dicts = [a.model_dump() for a in req.single_answers]
+    result = calculate_scores(req.age, dual_dicts, single_dicts)
 
-    import uuid
     session_id = str(uuid.uuid4())
 
     session = Session(
@@ -54,11 +56,20 @@ def submit_answers(req: SubmitRequest, db: DBSession = Depends(get_db)):
         session_id=session_id,
         question_id=0,
         selected_option=str(req.age),
-        weight=req.age_weight,
+        weight=3,  # 自动权重
     ))
 
-    # 存选择题答案
-    for ans in req.answers:
+    # 存双轴题答案
+    for ans in req.dual_answers:
+        db.add(Answer(
+            session_id=session_id,
+            question_id=ans.question_id,
+            selected_option=f"US:{ans.us_tier},CN:{ans.cn_tier}",
+            weight=ans.weight,
+        ))
+
+    # 存单选题答案
+    for ans in req.single_answers:
         db.add(Answer(
             session_id=session_id,
             question_id=ans.question_id,

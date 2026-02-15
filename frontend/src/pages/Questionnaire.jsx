@@ -5,7 +5,7 @@ import { ArrowLeftOutlined, ArrowRightOutlined, SendOutlined } from '@ant-design
 import QuestionCard from '../components/QuestionCard';
 import { fetchQuestions, submitAnswers } from '../api';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 const CATEGORY_ORDER = [
   '基础信息',
@@ -13,6 +13,12 @@ const CATEGORY_ORDER = [
   '身份与生活方式',
   '家庭、情感与社会资本',
 ];
+
+function isQuestionAnswered(q, a) {
+  if (q.type === 'age_input') return a?.age !== undefined;
+  if (q.type === 'dual_select') return a?.us_tier !== undefined && a?.cn_tier !== undefined;
+  return a?.selected_option !== undefined;
+}
 
 export default function Questionnaire() {
   const navigate = useNavigate();
@@ -25,7 +31,6 @@ export default function Questionnaire() {
   useEffect(() => {
     fetchQuestions().then((data) => {
       setQuestions(data);
-      // 初始化所有答案的默认权重
       const defaults = {};
       data.forEach((q) => {
         defaults[q.id] = { weight: 3 };
@@ -39,7 +44,6 @@ export default function Questionnaire() {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
   };
 
-  // 按类别分组
   const groupedQuestions = CATEGORY_ORDER.map((cat) => ({
     category: cat,
     items: questions.filter((q) => q.category === cat),
@@ -47,28 +51,19 @@ export default function Questionnaire() {
 
   const currentGroup = groupedQuestions[currentCategory];
   const totalQuestions = questions.length;
-  const answeredCount = Object.values(answers).filter(
-    (a) => a.selected_option || a.age
-  ).length;
+  const answeredCount = Object.entries(answers).filter(([id, a]) => {
+    const q = questions.find((qq) => qq.id === Number(id));
+    return q && isQuestionAnswered(q, a);
+  }).length;
   const progress = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
 
   const isCurrentGroupComplete = () => {
     if (!currentGroup) return false;
-    return currentGroup.items.every((q) => {
-      const a = answers[q.id];
-      if (q.type === 'age_input') return a?.age !== undefined;
-      return a?.selected_option !== undefined;
-    });
+    return currentGroup.items.every((q) => isQuestionAnswered(q, answers[q.id]));
   };
 
   const handleSubmit = async () => {
-    // 验证所有题目都已作答
-    const unanswered = questions.filter((q) => {
-      const a = answers[q.id];
-      if (q.type === 'age_input') return a?.age === undefined;
-      return a?.selected_option === undefined;
-    });
-
+    const unanswered = questions.filter((q) => !isQuestionAnswered(q, answers[q.id]));
     if (unanswered.length > 0) {
       message.error(`还有 ${unanswered.length} 道题未作答，请完成所有题目。`);
       return;
@@ -77,8 +72,18 @@ export default function Questionnaire() {
     setSubmitting(true);
     try {
       const ageAnswer = answers[0];
-      const choiceAnswers = questions
-        .filter((q) => q.type !== 'age_input')
+
+      const dualAnswers = questions
+        .filter((q) => q.type === 'dual_select')
+        .map((q) => ({
+          question_id: q.id,
+          us_tier: answers[q.id].us_tier,
+          cn_tier: answers[q.id].cn_tier,
+          weight: answers[q.id].weight || 3,
+        }));
+
+      const singleAnswers = questions
+        .filter((q) => q.type === 'single_choice')
         .map((q) => ({
           question_id: q.id,
           selected_option: answers[q.id].selected_option,
@@ -87,8 +92,8 @@ export default function Questionnaire() {
 
       const result = await submitAnswers({
         age: ageAnswer.age,
-        age_weight: ageAnswer.weight || 3,
-        answers: choiceAnswers,
+        dual_answers: dualAnswers,
+        single_answers: singleAnswers,
       });
 
       navigate(`/result/${result.session_id}`, { state: result });
@@ -109,7 +114,7 @@ export default function Questionnaire() {
   }
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: '24px 16px' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 16px' }}>
       <Title level={3} style={{ textAlign: 'center', marginBottom: 8 }}>
         留学生去留决策量表
       </Title>
@@ -135,7 +140,7 @@ export default function Questionnaire() {
             {currentGroup.category}
           </Title>
 
-          {currentGroup.items.map((q, idx) => (
+          {currentGroup.items.map((q) => (
             <QuestionCard
               key={q.id}
               question={q}

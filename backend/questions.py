@@ -1,117 +1,237 @@
 """
-完整题库：25 题（1 道年龄题 + 24 道选择题）
-每个选项的 scores 为 (US_Base_Score, CN_Base_Score)，范围 1-5。
+完整题库：26 题
+- 1 道年龄题（自动权重）
+- 9 道职业与财务硬件（Q1-Q5 双轴5档，Q6-Q9 双轴3档）
+- 9 道身份与生活方式
+- 7 道家庭、情感与社会资本
+
+双轴题(dual_select)：用户分别为"在美情况"和"在华情况"各选一个档位。
+- 5档题：档位值 1-5 直接作为 base_score
+- 3档题：档位值 1/2/3 映射为 base_score 1/3/5
+
 分数信息仅后端使用，不暴露给前端。
 """
 
+# 3档 -> 5分制映射
+TIER3_TO_SCORE = {1: 1, 2: 3, 3: 5}
+
 QUESTIONS = [
-    # ===== Q0: 年龄题 (特殊类型) =====
+    # ===== Q0: 年龄题 (自动权重，不让用户选权重) =====
     {
         "id": 0,
         "category": "基础信息",
         "title": "你的年龄",
         "type": "age_input",
-        "description": "请输入你的年龄（20-35岁）",
+        "description": "请输入你的年龄（20岁起，可填35+）",
+        "auto_weight": 3,
         "age_ranges": [
             {"min": 20, "max": 22, "scores": (1, 5)},
             {"min": 23, "max": 25, "scores": (2, 4)},
             {"min": 26, "max": 28, "scores": (3, 3)},
             {"min": 29, "max": 31, "scores": (4, 2)},
-            {"min": 32, "max": 35, "scores": (5, 1)},
+            {"min": 32, "max": 999, "scores": (5, 1)},  # 35+ 归入最高档
         ],
     },
 
-    # ===== 大类一：职业与财务硬件 (Career & Finance) =====
+    # ===== 大类一：职业与财务硬件 =====
+    # --- Q1-Q5: 双轴5档 (中美分别选档) ---
     {
         "id": 1,
         "category": "职业与财务硬件",
-        "title": "中美绝对薪资与购买力对标",
-        "type": "single_choice",
-        "options": [
-            {"label": "A", "text": "美区大厂/高阶 ($200k以上) vs 国内普通水平", "scores": (5, 1)},
-            {"label": "B", "text": "美区中坚力量 ($120k-200k) vs 国内优质外企/大厂 (¥30-60万)", "scores": (3, 3)},
-            {"label": "C", "text": "美区基础/入门岗 (<$80k) vs 国内大厂核心/创业/高管 (¥60万以上)", "scores": (1, 5)},
+        "title": "薪资水平",
+        "type": "dual_select",
+        "tiers": 5,
+        "us_label": "你在美国的薪资/收入水平",
+        "cn_label": "你回国后的薪资/收入预期",
+        "us_options": [
+            {"tier": 1, "text": "很低 (<$80k)"},
+            {"tier": 2, "text": "偏低 ($80k-$150k)"},
+            {"tier": 3, "text": "中等 ($150k-$300k)"},
+            {"tier": 4, "text": "较高 ($300k-$600k)"},
+            {"tier": 5, "text": "很高 ($600k+)"},
+        ],
+        "cn_options": [
+            {"tier": 1, "text": "很低 (<15万)"},
+            {"tier": 2, "text": "偏低 (15-30万)"},
+            {"tier": 3, "text": "中等 (30-60万)"},
+            {"tier": 4, "text": "较高 (60-120万)"},
+            {"tier": 5, "text": "很高 (120万+)"},
         ],
     },
     {
         "id": 2,
         "category": "职业与财务硬件",
-        "title": "房租/房贷占税后收入比（财务健康度）",
-        "type": "single_choice",
-        "options": [
-            {"label": "A", "text": "留美轻松买房或房收比 <20% / 回国一线面临地狱级房贷", "scores": (5, 1)},
-            {"label": "B", "text": "两边都要靠自己拼首付，压力相当 (约占 30%)", "scores": (3, 3)},
-            {"label": "C", "text": "留美只能合租或房收比 >45% / 国内老家有房或公积金完全覆盖", "scores": (1, 5)},
+        "title": "住房压力",
+        "type": "dual_select",
+        "tiers": 5,
+        "us_label": "你在美国的住房压力",
+        "cn_label": "你回国后的住房压力",
+        "us_options": [
+            {"tier": 1, "text": "压力极大 (房收比>45%/买不起)"},
+            {"tier": 2, "text": "压力较大 (房收比35-45%)"},
+            {"tier": 3, "text": "压力一般 (房收比25-35%)"},
+            {"tier": 4, "text": "压力较小 (房收比15-25%)"},
+            {"tier": 5, "text": "几乎无压力 (房收比<15%/已有房)"},
+        ],
+        "cn_options": [
+            {"tier": 1, "text": "压力极大 (一线无房无指标/地狱级房贷)"},
+            {"tier": 2, "text": "压力较大 (需大额贷款)"},
+            {"tier": 3, "text": "压力一般 (公积金部分覆盖)"},
+            {"tier": 4, "text": "压力较小 (家里有部分支持)"},
+            {"tier": 5, "text": "几乎无压力 (家里已备房/老家有房)"},
         ],
     },
     {
         "id": 3,
         "category": "职业与财务硬件",
-        "title": "每周实际工作时长（WLB）",
-        "type": "single_choice",
-        "options": [
-            {"label": "A", "text": "美国极度 WLB (<40h) / 国内必然面临大小周或 55h+ 待机", "scores": (5, 1)},
-            {"label": "B", "text": "两边都需要偶尔加班 (40h-50h 左右)", "scores": (3, 3)},
-            {"label": "C", "text": "美国身处高压淘汰环境 / 国内属于极度稳定的体制内 955", "scores": (1, 5)},
+        "title": "工作节奏与生活平衡 (WLB)",
+        "type": "dual_select",
+        "tiers": 5,
+        "us_label": "你在美国的工作节奏",
+        "cn_label": "你回国后的工作节奏预期",
+        "us_options": [
+            {"tier": 1, "text": "非常高压 (60h+/PIP淘汰制)"},
+            {"tier": 2, "text": "较高压 (50-60h)"},
+            {"tier": 3, "text": "正常 (40-50h)"},
+            {"tier": 4, "text": "较轻松 (35-40h)"},
+            {"tier": 5, "text": "非常轻松 (<35h/极致WLB)"},
+        ],
+        "cn_options": [
+            {"tier": 1, "text": "非常高压 (996/大小周/55h+)"},
+            {"tier": 2, "text": "较高压 (经常加班)"},
+            {"tier": 3, "text": "正常 (40-50h/偶尔加班)"},
+            {"tier": 4, "text": "较轻松 (955体制内)"},
+            {"tier": 5, "text": "非常轻松 (极度稳定955/弹性)"},
         ],
     },
     {
         "id": 4,
         "category": "职业与财务硬件",
-        "title": "全年带薪休假天数（PTO）",
-        "type": "single_choice",
-        "options": [
-            {"label": "A", "text": "美国福利极佳 (15-25天以上) / 国内请假极难或仅有 5天基础年假", "scores": (5, 1)},
-            {"label": "B", "text": "两边休假制度大致相当 (10-15天左右)", "scores": (3, 3)},
+        "title": "全年带薪休假 (PTO)",
+        "type": "dual_select",
+        "tiers": 5,
+        "us_label": "你在美国的带薪假天数",
+        "cn_label": "你回国后的带薪假预期",
+        "us_options": [
+            {"tier": 1, "text": "很少 (<5天)"},
+            {"tier": 2, "text": "偏少 (5-10天)"},
+            {"tier": 3, "text": "一般 (10-15天)"},
+            {"tier": 4, "text": "较多 (15-20天)"},
+            {"tier": 5, "text": "很多 (20天+/无限PTO)"},
+        ],
+        "cn_options": [
+            {"tier": 1, "text": "很少 (5天基础/请假极难)"},
+            {"tier": 2, "text": "偏少 (5-10天)"},
+            {"tier": 3, "text": "一般 (10-15天)"},
+            {"tier": 4, "text": "较多 (15-20天)"},
+            {"tier": 5, "text": "很多 (20天+/体制内)"},
         ],
     },
     {
         "id": 5,
         "category": "职业与财务硬件",
-        "title": "职场「35岁现象」与生命周期",
-        "type": "single_choice",
-        "options": [
-            {"label": "A", "text": "极其看重职场寿命，畏惧国内 35 岁裁员红线，倾向美国反年龄歧视", "scores": (5, 1)},
-            {"label": "B", "text": "自身行业两边越老越吃香 (如医生、资深律师)，无视年龄红线", "scores": (3, 3)},
-            {"label": "C", "text": "打算在国内考公进体制，追求绝对的终身稳定", "scores": (1, 5)},
+        "title": "职场寿命与年龄压力",
+        "type": "dual_select",
+        "tiers": 5,
+        "us_label": "你在美国的职场年龄压力",
+        "cn_label": "你回国后的职场年龄压力",
+        "us_options": [
+            {"tier": 1, "text": "压力极大 (行业有隐性年龄歧视)"},
+            {"tier": 2, "text": "压力较大"},
+            {"tier": 3, "text": "一般 (不明显)"},
+            {"tier": 4, "text": "压力较小 (反年龄歧视法保护)"},
+            {"tier": 5, "text": "几乎无压力 (越老越值钱)"},
+        ],
+        "cn_options": [
+            {"tier": 1, "text": "压力极大 (面临35岁裁员红线)"},
+            {"tier": 2, "text": "压力较大 (行业偏好年轻人)"},
+            {"tier": 3, "text": "一般 (行业不太看年龄)"},
+            {"tier": 4, "text": "压力较小 (体制内/专业领域)"},
+            {"tier": 5, "text": "几乎无压力 (越老越吃香)"},
         ],
     },
+
+    # --- Q6-Q9: 双轴3档 (中美分别选档) ---
     {
         "id": 6,
         "category": "职业与财务硬件",
         "title": "裁员风险与失业缓冲",
-        "type": "single_choice",
-        "options": [
-            {"label": "A", "text": "留美受制于签证 60 天宽限期，一旦失业面临立刻离境风险", "scores": (1, 5)},
-            {"label": "B", "text": "两地行业波动差不多，都有足够缓冲", "scores": (3, 3)},
+        "type": "dual_select",
+        "tiers": 3,
+        "us_label": "你在美国的失业风险与缓冲",
+        "cn_label": "你回国后的失业风险与缓冲",
+        "us_options": [
+            {"tier": 1, "text": "高风险 (签证受限，失业60天内必须离境)"},
+            {"tier": 2, "text": "中等 (有一定缓冲期，但仍受身份约束)"},
+            {"tier": 3, "text": "低风险 (绿卡/公民，充足失业保障)"},
+        ],
+        "cn_options": [
+            {"tier": 1, "text": "高风险 (行业不稳/35岁危机)"},
+            {"tier": 2, "text": "中等 (普通行业波动)"},
+            {"tier": 3, "text": "低风险 (体制内/铁饭碗)"},
         ],
     },
     {
         "id": 7,
         "category": "职业与财务硬件",
-        "title": "副业拓展与合规门槛",
-        "type": "single_choice",
-        "options": [
-            {"label": "A", "text": "签证明文禁止 W2 外收入，留美做副业/创业不合法", "scores": (1, 5)},
-            {"label": "B", "text": "已有自由身份，或压根不想做副业", "scores": (3, 3)},
-            {"label": "C", "text": "极度渴望做自媒体/电商，国内土壤极佳无合规限制", "scores": (1, 5)},
+        "title": "副业与额外收入渠道",
+        "type": "dual_select",
+        "tiers": 3,
+        "us_label": "你在美国做副业的可行性",
+        "cn_label": "你回国后做副业的可行性",
+        "us_options": [
+            {"tier": 1, "text": "受限 (签证明确禁止W2外收入)"},
+            {"tier": 2, "text": "一般 (身份允许但机会有限)"},
+            {"tier": 3, "text": "自由 (无身份限制，副业空间大)"},
+        ],
+        "cn_options": [
+            {"tier": 1, "text": "受限 (行业/精力限制，难以开展)"},
+            {"tier": 2, "text": "一般 (有一定空间)"},
+            {"tier": 3, "text": "自由 (自媒体/电商土壤极佳)"},
         ],
     },
     {
         "id": 8,
         "category": "职业与财务硬件",
-        "title": "创业土壤与投资渠道",
-        "type": "single_choice",
-        "options": [
-            {"label": "A", "text": "留美受限高昂人力与身份壁垒 / 国内有极佳的供应链和政策补贴", "scores": (1, 5)},
-            {"label": "B", "text": "不打算创业，安心做打工人", "scores": (3, 3)},
-            {"label": "C", "text": "具备极强的海外本土技术/风投资源，专注出海或美国本土创业", "scores": (5, 1)},
+        "title": "创业环境与资源",
+        "type": "dual_select",
+        "tiers": 3,
+        "us_label": "你在美国的创业条件",
+        "cn_label": "你回国后的创业条件",
+        "us_options": [
+            {"tier": 1, "text": "不利 (身份壁垒大/人力成本高/无资源)"},
+            {"tier": 2, "text": "一般 (有一定资源和可能性)"},
+            {"tier": 3, "text": "有利 (有技术/风投/本土创业资源)"},
+        ],
+        "cn_options": [
+            {"tier": 1, "text": "不利 (无资源/高竞争/缺人脉)"},
+            {"tier": 2, "text": "一般 (有一定供应链和市场渠道)"},
+            {"tier": 3, "text": "有利 (供应链优势/政策补贴/家族资源)"},
+        ],
+    },
+    {
+        "id": 9,
+        "category": "职业与财务硬件",
+        "title": "行业发展前景与晋升空间",
+        "type": "dual_select",
+        "tiers": 3,
+        "us_label": "你所在行业在美国的前景",
+        "cn_label": "你所在行业在国内的前景",
+        "us_options": [
+            {"tier": 1, "text": "前景不佳 (行业衰退/天花板明显)"},
+            {"tier": 2, "text": "前景一般 (行业稳定，无明显优势)"},
+            {"tier": 3, "text": "前景很好 (行业上升期/技术前沿)"},
+        ],
+        "cn_options": [
+            {"tier": 1, "text": "前景不佳 (行业严重内卷/下行)"},
+            {"tier": 2, "text": "前景一般 (行业稳定)"},
+            {"tier": 3, "text": "前景很好 (高速发展/政策扶持/风口)"},
         ],
     },
 
-    # ===== 大类二：身份与生活方式 (Identity & Lifestyle) =====
+    # ===== 大类二：身份与生活方式 =====
     {
-        "id": 9,
+        "id": 10,
         "category": "身份与生活方式",
         "title": "留美的客观身份状态（硬壁垒）",
         "type": "single_choice",
@@ -122,7 +242,7 @@ QUESTIONS = [
         ],
     },
     {
-        "id": 10,
+        "id": 11,
         "category": "身份与生活方式",
         "title": "预想回国常驻地的户口难度",
         "type": "single_choice",
@@ -133,7 +253,7 @@ QUESTIONS = [
         ],
     },
     {
-        "id": 11,
+        "id": 12,
         "category": "身份与生活方式",
         "title": "本地文娱内容与生态偏好",
         "type": "single_choice",
@@ -144,17 +264,18 @@ QUESTIONS = [
         ],
     },
     {
-        "id": 12,
+        "id": 13,
         "category": "身份与生活方式",
         "title": "休闲旅行导向",
         "type": "single_choice",
         "options": [
             {"label": "A", "text": "极致自然派：热爱硬核户外、国家公园探险、高山滑雪", "scores": (5, 1)},
-            {"label": "B", "text": "繁华都市派：热爱 Citywalk、密集的高端餐饮探店、便利商业", "scores": (1, 5)},
+            {"label": "B", "text": "兼而有之：自然与都市都喜欢，无明显偏好", "scores": (3, 3)},
+            {"label": "C", "text": "繁华都市派：热爱 Citywalk、密集的高端餐饮探店、便利商业", "scores": (1, 5)},
         ],
     },
     {
-        "id": 13,
+        "id": 14,
         "category": "身份与生活方式",
         "title": "饮食硬性基因（中国胃）",
         "type": "single_choice",
@@ -165,7 +286,7 @@ QUESTIONS = [
         ],
     },
     {
-        "id": 14,
+        "id": 15,
         "category": "身份与生活方式",
         "title": "物理出行依赖度",
         "type": "single_choice",
@@ -176,7 +297,7 @@ QUESTIONS = [
         ],
     },
     {
-        "id": 15,
+        "id": 16,
         "category": "身份与生活方式",
         "title": "核心社交性格",
         "type": "single_choice",
@@ -187,7 +308,7 @@ QUESTIONS = [
         ],
     },
     {
-        "id": 16,
+        "id": 17,
         "category": "身份与生活方式",
         "title": "性取向与少数群体身份",
         "type": "single_choice",
@@ -197,7 +318,7 @@ QUESTIONS = [
         ],
     },
     {
-        "id": 17,
+        "id": 18,
         "category": "身份与生活方式",
         "title": "性别与社会时钟期待",
         "type": "single_choice",
@@ -207,9 +328,9 @@ QUESTIONS = [
         ],
     },
 
-    # ===== 大类三：家庭、情感与社会资本 (Family & Social Capital) =====
+    # ===== 大类三：家庭、情感与社会资本 =====
     {
-        "id": 18,
+        "id": 19,
         "category": "家庭、情感与社会资本",
         "title": "原生家庭结构与照料义务",
         "type": "single_choice",
@@ -220,7 +341,7 @@ QUESTIONS = [
         ],
     },
     {
-        "id": 19,
+        "id": 20,
         "category": "家庭、情感与社会资本",
         "title": "父母财务兜底与房产赞助",
         "type": "single_choice",
@@ -231,7 +352,7 @@ QUESTIONS = [
         ],
     },
     {
-        "id": 20,
+        "id": 21,
         "category": "家庭、情感与社会资本",
         "title": "父母口头/精神施压度",
         "type": "single_choice",
@@ -242,7 +363,7 @@ QUESTIONS = [
         ],
     },
     {
-        "id": 21,
+        "id": 22,
         "category": "家庭、情感与社会资本",
         "title": "国内核心特权与人脉资产",
         "type": "single_choice",
@@ -253,18 +374,20 @@ QUESTIONS = [
         ],
     },
     {
-        "id": 22,
+        "id": 23,
         "category": "家庭、情感与社会资本",
         "title": "伴侣的职业地域对口度 (Two-body Problem)",
         "type": "single_choice",
         "options": [
             {"label": "A", "text": "单身；或伴侣在美国拥有极佳的职业发展/稳定身份", "scores": (5, 1)},
-            {"label": "B", "text": "伴侣职业两地均可无缝衔接", "scores": (3, 3)},
-            {"label": "C", "text": "伴侣职业极度依赖国内土壤 (国内自媒体/演艺/体制)，赴美即失业", "scores": (1, 5)},
+            {"label": "B", "text": "伴侣在美国的发展整体优于国内", "scores": (4, 2)},
+            {"label": "C", "text": "伴侣职业两地均可无缝衔接", "scores": (3, 3)},
+            {"label": "D", "text": "伴侣在国内的发展整体优于美国", "scores": (2, 4)},
+            {"label": "E", "text": "伴侣职业极度依赖国内土壤 (国内自媒体/演艺/体制)，赴美即失业", "scores": (1, 5)},
         ],
     },
     {
-        "id": 23,
+        "id": 24,
         "category": "家庭、情感与社会资本",
         "title": "单身状态下的择偶基数（已婚选B）",
         "type": "single_choice",
@@ -274,17 +397,21 @@ QUESTIONS = [
         ],
     },
     {
-        "id": 24,
+        "id": 25,
         "category": "家庭、情感与社会资本",
         "title": "对下一代基础教育的偏好",
         "type": "single_choice",
         "options": [
             {"label": "A", "text": "推崇北美素质/快乐教育，反感国内做题家内卷", "scores": (5, 1)},
-            {"label": "B", "text": "丁克一族，无生育计划", "scores": (3, 3)},
-            {"label": "C", "text": "推崇国内公立体制扎实的数理化，或已拥有国内顶尖学区房", "scores": (1, 5)},
+            {"label": "B", "text": "无所谓，教育不影响去留决策", "scores": (3, 3)},
+            {"label": "C", "text": "丁克一族，无生育计划", "scores": (3, 3)},
+            {"label": "D", "text": "推崇国内公立体制扎实的数理化，或已拥有国内顶尖学区房", "scores": (1, 5)},
         ],
     },
 ]
+
+# 按 id 建立快速查找索引
+_QUESTION_MAP = {q["id"]: q for q in QUESTIONS}
 
 
 def get_questions_for_frontend():
@@ -300,8 +427,14 @@ def get_questions_for_frontend():
         if q["type"] == "age_input":
             item["description"] = q["description"]
             item["min_age"] = 20
-            item["max_age"] = 35
-        else:
+            item["auto_weight"] = True  # 前端不显示权重选择
+        elif q["type"] == "dual_select":
+            item["tiers"] = q["tiers"]
+            item["us_label"] = q["us_label"]
+            item["cn_label"] = q["cn_label"]
+            item["us_options"] = [{"tier": o["tier"], "text": o["text"]} for o in q["us_options"]]
+            item["cn_options"] = [{"tier": o["tier"], "text": o["text"]} for o in q["cn_options"]]
+        else:  # single_choice
             item["options"] = [
                 {"label": opt["label"], "text": opt["text"]}
                 for opt in q["options"]
@@ -312,19 +445,28 @@ def get_questions_for_frontend():
 
 def get_age_scores(age: int) -> tuple[int, int]:
     """根据年龄返回 (US_Base_Score, CN_Base_Score)"""
-    age_q = QUESTIONS[0]
+    age_q = _QUESTION_MAP[0]
     for r in age_q["age_ranges"]:
         if r["min"] <= age <= r["max"]:
             return r["scores"]
-    # 边界处理
     if age < 20:
         return (1, 5)
-    return (5, 1)
+    return (5, 1)  # 35+ 同 32-35
+
+
+def get_dual_scores(question_id: int, us_tier: int, cn_tier: int) -> tuple[int, int]:
+    """双轴题：根据档位返回 (US_Base_Score, CN_Base_Score)"""
+    q = _QUESTION_MAP[question_id]
+    tiers = q["tiers"]
+    if tiers == 5:
+        return (us_tier, cn_tier)
+    else:  # 3档 -> 映射为 1/3/5
+        return (TIER3_TO_SCORE[us_tier], TIER3_TO_SCORE[cn_tier])
 
 
 def get_option_scores(question_id: int, selected_option: str) -> tuple[int, int]:
-    """根据题号和选项返回 (US_Base_Score, CN_Base_Score)"""
-    q = QUESTIONS[question_id]
+    """单选题：根据题号和选项返回 (US_Base_Score, CN_Base_Score)"""
+    q = _QUESTION_MAP[question_id]
     for opt in q["options"]:
         if opt["label"] == selected_option:
             return opt["scores"]

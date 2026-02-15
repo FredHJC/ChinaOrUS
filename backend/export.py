@@ -92,10 +92,11 @@ def generate_pdf(session_data: dict) -> bytes:
     # 画用户点
     us = session_data["us_total_score"]
     cn = session_data["cn_total_score"]
-    threshold = 75.0
+    from scoring import THRESHOLD
+    threshold = THRESHOLD
     # 将分数映射到坐标
-    px = cx + (cn - threshold) / (250 - 25) * 2 * box_size
-    py = cy + (us - threshold) / (250 - 25) * 2 * box_size
+    px = cx + (cn - threshold) / (225 - 5) * 2 * box_size
+    py = cy + (us - threshold) / (225 - 5) * 2 * box_size
     c.setFillColor(HexColor("#ff4444"))
     c.circle(px, py, 4 * mm, fill=1, stroke=0)
 

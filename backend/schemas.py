@@ -1,16 +1,25 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
-class AnswerItem(BaseModel):
-    question_id: int = Field(..., ge=1, le=24)
-    selected_option: str = Field(..., pattern=r"^[A-C]$")
+class DualAnswerItem(BaseModel):
+    question_id: int = Field(..., ge=1, le=9)
+    us_tier: int = Field(..., ge=1, le=5)
+    cn_tier: int = Field(..., ge=1, le=5)
+    weight: int = Field(..., ge=1, le=5)
+
+
+class SingleAnswerItem(BaseModel):
+    question_id: int = Field(..., ge=10, le=25)
+    selected_option: str = Field(..., pattern=r"^[A-E]$")
     weight: int = Field(..., ge=1, le=5)
 
 
 class SubmitRequest(BaseModel):
-    age: int = Field(..., ge=20, le=35)
-    age_weight: int = Field(..., ge=1, le=5)
-    answers: list[AnswerItem] = Field(..., min_length=24, max_length=24)
+    age: int = Field(..., ge=20)  # 无上限，35+ 后端归类
+    dual_answers: list[DualAnswerItem] = Field(..., min_length=9, max_length=9)
+    single_answers: list[SingleAnswerItem] = Field(..., min_length=16, max_length=16)
 
 
 class ChartData(BaseModel):
