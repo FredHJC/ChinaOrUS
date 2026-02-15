@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+*.md
+.DS_Store
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.db
+dist
+.vite

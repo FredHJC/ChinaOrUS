@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: chinaorus-backend
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend/decision_matrix.db:/app/decision_matrix.db
+    restart: unless-stopped
+    networks:
+      - chinaorus-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: chinaorus-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - chinaorus-network
+
+networks:
+  chinaorus-network:
+    driver: bridge
