@@ -1,0 +1,16 @@
+/* Fix Ant Design Card title truncation on mobile */
+.ant-card-head-title {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+}
+
+/* Fix Ant Design Steps title truncation on mobile */
+@media (max-width: 768px) {
+  .ant-steps-item-title {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    font-size: 12px !important;
+  }
+}

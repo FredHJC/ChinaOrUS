@@ -1,9 +1,10 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { Button, Card, Typography, Space, Spin, Tag } from 'antd';
-import { DownloadOutlined, RedoOutlined, GlobalOutlined, HomeOutlined } from '@ant-design/icons';
+import { useState, useEffect, useRef } from 'react';
+import { Button, Card, Typography, Space, Spin, Tag, message } from 'antd';
+import { CameraOutlined, RedoOutlined, GlobalOutlined, HomeOutlined } from '@ant-design/icons';
+import html2canvas from 'html2canvas';
 import ScatterChart from '../components/ScatterChart';
-import { getResult, getExportUrl } from '../api';
+import { getResult } from '../api';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -20,6 +21,9 @@ export default function Result() {
   const navigate = useNavigate();
   const [data, setData] = useState(location.state || null);
   const [loading, setLoading] = useState(!location.state);
+  const [exporting, setExporting] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const exportRef = useRef(null);
 
   useEffect(() => {
     if (!data && sessionId) {
@@ -36,6 +40,34 @@ export default function Result() {
     }
   }, [sessionId, data]);
 
+  const handleExportImage = async () => {
+    if (!exportRef.current) return;
+    setExporting(true);
+    try {
+      const canvas = await html2canvas(exportRef.current, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false,
+      });
+      const dataUrl = canvas.toDataURL('image/png');
+      setPreviewUrl(dataUrl);
+    } catch (err) {
+      console.error(err);
+      message.error('生成图片失败，请重试');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!previewUrl) return;
+    const link = document.createElement('a');
+    link.download = `决策报告_${data.session_id.slice(0, 8)}.png`;
+    link.href = previewUrl;
+    link.click();
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -47,7 +79,6 @@ export default function Result() {
   if (!data) return null;
 
   const style = QUADRANT_STYLES[data.quadrant] || QUADRANT_STYLES.us_low_cn_low;
-  const sid = data.session_id;
 
   return (
     <div style={{
@@ -59,45 +90,59 @@ export default function Result() {
         测试结果
       </Title>
 
-      {/* 四象限图 */}
-      <Card style={{ marginBottom: 24, borderRadius: 12 }}>
-        <ScatterChart chartData={data.chart_data} quadrant={data.quadrant} />
-      </Card>
+      {/* 可导出区域 */}
+      <div ref={exportRef} style={{ background: '#fff', padding: 16 }}>
+        {/* 导出时显示的标题 */}
+        <div style={{ textAlign: 'center', marginBottom: 16 }}>
+          <Title level={3} style={{ margin: 0 }}>留学生去留决策量表 - 测试报告</Title>
+        </div>
 
-      {/* 诊断结果 */}
-      <Card
-        style={{
-          marginBottom: 24,
-          borderRadius: 12,
-          borderLeft: `4px solid ${style.color}`,
-        }}
-      >
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-          <Space>
-            <Tag color={style.tagColor} style={{ fontSize: 16, padding: '4px 16px' }}>
-              {data.quadrant_label}
-            </Tag>
+        {/* 四象限图 */}
+        <Card style={{ marginBottom: 24, borderRadius: 12 }}>
+          <ScatterChart chartData={data.chart_data} quadrant={data.quadrant} />
+        </Card>
+
+        {/* 诊断结果 */}
+        <Card
+          style={{
+            marginBottom: 24,
+            borderRadius: 12,
+            borderLeft: `4px solid ${style.color}`,
+          }}
+        >
+          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            <Space>
+              <Tag color={style.tagColor} style={{ fontSize: 16, padding: '4px 16px' }}>
+                {data.quadrant_label}
+              </Tag>
+            </Space>
+            <Paragraph style={{ fontSize: 15, lineHeight: 1.8, margin: 0 }}>
+              {data.diagnosis}
+            </Paragraph>
           </Space>
-          <Paragraph style={{ fontSize: 15, lineHeight: 1.8, margin: 0 }}>
-            {data.diagnosis}
-          </Paragraph>
-        </Space>
-      </Card>
+        </Card>
+
+        <div style={{ textAlign: 'center' }}>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            本测试结果仅供参考，不构成任何专业建议。人生决策请综合考虑更多因素。
+          </Text>
+        </div>
+      </div>
 
       {/* 操作按钮 */}
-      <Space size="middle" style={{ display: 'flex', justifyContent: 'center' }}>
+      <Space size="middle" style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
         <Button
           type="primary"
           size="large"
-          icon={<DownloadOutlined />}
-          href={getExportUrl(sid)}
-          target="_blank"
+          icon={<CameraOutlined />}
+          loading={exporting}
+          onClick={handleExportImage}
           style={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             border: 'none',
           }}
         >
-          导出 PDF 报告
+          生成结果图片
         </Button>
         <Button
           size="large"
@@ -108,11 +153,66 @@ export default function Result() {
         </Button>
       </Space>
 
-      <div style={{ textAlign: 'center', marginTop: 32 }}>
-        <Text type="secondary">
-          本测试结果仅供参考，不构成任何专业建议。人生决策请综合考虑更多因素。
-        </Text>
-      </div>
+      {/* 图片预览弹层 */}
+      {previewUrl && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            zIndex: 1000,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+          onClick={() => setPreviewUrl(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '90vw',
+              maxHeight: '75vh',
+              overflow: 'auto',
+              borderRadius: 12,
+            }}
+          >
+            <img
+              src={previewUrl}
+              alt="测试报告"
+              style={{
+                width: '100%',
+                display: 'block',
+                borderRadius: 12,
+              }}
+            />
+          </div>
+          <Space size="middle" style={{ marginTop: 16 }}>
+            <Button
+              type="primary"
+              size="large"
+              onClick={handleDownload}
+            >
+              下载图片
+            </Button>
+            <Button
+              size="large"
+              style={{ color: '#fff', borderColor: '#fff' }}
+              ghost
+              onClick={() => setPreviewUrl(null)}
+            >
+              关闭
+            </Button>
+          </Space>
+          <Text style={{ color: 'rgba(255,255,255,0.6)', marginTop: 12, textAlign: 'center' }}>
+            手机用户：长按图片即可保存到相册
+          </Text>
+        </div>
+      )}
     </div>
   );
 }

@@ -41,12 +41,11 @@ export default function QuestionCard({ question, index, answer, onAnswerChange }
     <Card
       style={{ marginBottom: 24 }}
       title={
-        <span>
+        <div style={{ whiteSpace: 'normal', lineHeight: 1.5 }}>
           <Text type="secondary" style={{ marginRight: 8 }}>Q{index + 1}</Text>
           {question.title}
-        </span>
+        </div>
       }
-      extra={<Text type="secondary">{question.category}</Text>}
     >
       {isAge && (
         <div style={{ marginBottom: 24 }}>
