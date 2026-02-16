@@ -5,7 +5,7 @@ import { ArrowLeftOutlined, ArrowRightOutlined, SendOutlined } from '@ant-design
 import QuestionCard from '../components/QuestionCard';
 import { fetchQuestions, submitAnswers } from '../api';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const CATEGORY_ORDER = [
   '基础信息',
@@ -15,7 +15,6 @@ const CATEGORY_ORDER = [
 ];
 
 function isQuestionAnswered(q, a) {
-  if (q.type === 'age_input') return a?.age !== undefined;
   if (q.type === 'dual_select') return a?.us_tier !== undefined && a?.cn_tier !== undefined;
   return a?.selected_option !== undefined;
 }
@@ -71,8 +70,6 @@ export default function Questionnaire() {
 
     setSubmitting(true);
     try {
-      const ageAnswer = answers[0];
-
       const dualAnswers = questions
         .filter((q) => q.type === 'dual_select')
         .map((q) => ({
@@ -91,7 +88,6 @@ export default function Questionnaire() {
         }));
 
       const result = await submitAnswers({
-        age: ageAnswer.age,
         dual_answers: dualAnswers,
         single_answers: singleAnswers,
       });
@@ -116,7 +112,7 @@ export default function Questionnaire() {
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 16px' }}>
       <Title level={3} style={{ textAlign: 'center', marginBottom: 8 }}>
-        留学生去留决策量表
+        留学生去留决策量表 <Text style={{ fontSize: 14, color: '#764ba2', fontWeight: 'normal', verticalAlign: 'middle', border: '1px solid #764ba2', borderRadius: 6, padding: '2px 8px' }}>V2</Text>
       </Title>
 
       <Progress

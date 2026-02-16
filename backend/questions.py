@@ -1,10 +1,11 @@
 """
-完整题库：26 题
-- 1 道年龄题（自动权重）
-- 9 道职业与财务硬件（Q1-Q5 双轴5档，Q6-Q9 双轴3档）
-- 9 道身份与生活方式
-- 7 道家庭、情感与社会资本
+V2 完整题库：29 题
+- 4 道基础信息（single_choice）
+- 9 道职业与财务硬件（dual_select：Q4-Q8 五档，Q9-Q12 三档）
+- 9 道身份与生活方式（single_choice）
+- 7 道家庭、情感与社会资本（single_choice）
 
+所有题目均为 single_choice 或 dual_select，移除了 V1 的 age_input 类型。
 双轴题(dual_select)：用户分别为"在美情况"和"在华情况"各选一个档位。
 - 5档题：档位值 1-5 直接作为 base_score
 - 3档题：档位值 1/2/3 映射为 base_score 1/3/5
@@ -16,144 +17,183 @@
 TIER3_TO_SCORE = {1: 1, 2: 3, 3: 5}
 
 QUESTIONS = [
-    # ===== Q0: 年龄题 (自动权重，不让用户选权重) =====
+    # ===== 第一部分：基础信息 (ID 0-3) =====
     {
         "id": 0,
         "category": "基础信息",
-        "title": "你的年龄",
-        "type": "age_input",
-        "description": "请输入你的年龄（20岁起，可填35+）",
+        "title": "性别",
+        "type": "single_choice",
         "auto_weight": 3,
-        "age_ranges": [
-            {"min": 20, "max": 22, "scores": (1, 5)},
-            {"min": 23, "max": 25, "scores": (2, 4)},
-            {"min": 26, "max": 28, "scores": (3, 3)},
-            {"min": 29, "max": 31, "scores": (4, 2)},
-            {"min": 32, "max": 999, "scores": (5, 1)},  # 35+ 归入最高档
+        "options": [
+            {"label": "A", "text": "女性", "scores": (4, 2)},
+            {"label": "B", "text": "男性", "scores": (3, 3)},
+            {"label": "C", "text": "非二元性别/不愿透露", "scores": (5, 1)},
+        ],
+    },
+    {
+        "id": 1,
+        "category": "基础信息",
+        "title": "家庭在国内所属的城市级别",
+        "type": "single_choice",
+        "auto_weight": 3,
+        "options": [
+            {"label": "A", "text": "超一线城市（北上广深）", "scores": (2, 5)},
+            {"label": "B", "text": "一线/强二线城市（杭州、南京、成都等）", "scores": (3, 4)},
+            {"label": "C", "text": "普通二线/地级市", "scores": (3, 3)},
+            {"label": "D", "text": "三线城市及以下/县区", "scores": (4, 2)},
+            {"label": "E", "text": "暂无国内固定落脚点/海外长居", "scores": (5, 1)},
+        ],
+    },
+    {
+        "id": 2,
+        "category": "基础信息",
+        "title": "你的来美年数",
+        "type": "single_choice",
+        "auto_weight": 3,
+        "options": [
+            {"label": "A", "text": "< 1 年（新鲜人）", "scores": (2, 4)},
+            {"label": "B", "text": "1-3 年（逐步适应）", "scores": (3, 3)},
+            {"label": "C", "text": "3-5 年（关键转型期）", "scores": (4, 2)},
+            {"label": "D", "text": "5-10 年（深度扎根）", "scores": (5, 1)},
+            {"label": "E", "text": "10 年以上", "scores": (5, 1)},
+        ],
+    },
+    {
+        "id": 3,
+        "category": "基础信息",
+        "title": "你的年龄",
+        "type": "single_choice",
+        "auto_weight": 3,
+        "options": [
+            {"label": "A", "text": "20-22 岁", "scores": (1, 5)},
+            {"label": "B", "text": "23-25 岁", "scores": (2, 4)},
+            {"label": "C", "text": "26-28 岁", "scores": (3, 3)},
+            {"label": "D", "text": "29-31 岁", "scores": (4, 2)},
+            {"label": "E", "text": "32 岁以上", "scores": (5, 1)},
         ],
     },
 
-    # ===== 大类一：职业与财务硬件 =====
-    # --- Q1-Q5: 双轴5档 (中美分别选档) ---
+    # ===== 第二部分：职业与财务硬件 (ID 4-12) =====
+    # --- Q4-Q8: 双轴5档 ---
     {
-        "id": 1,
+        "id": 4,
         "category": "职业与财务硬件",
-        "title": "薪资水平",
+        "title": "预期薪资购买力对比",
         "type": "dual_select",
         "tiers": 5,
         "us_label": "你在美国的薪资/收入水平",
         "cn_label": "你回国后的薪资/收入预期",
         "us_options": [
-            {"tier": 1, "text": "很低 (<$80k)"},
-            {"tier": 2, "text": "偏低 ($80k-$150k)"},
-            {"tier": 3, "text": "中等 ($150k-$300k)"},
-            {"tier": 4, "text": "较高 ($300k-$600k)"},
-            {"tier": 5, "text": "很高 ($600k+)"},
+            {"tier": 1, "text": "<$80k"},
+            {"tier": 2, "text": "$80k-$150k"},
+            {"tier": 3, "text": "$150k-$300k"},
+            {"tier": 4, "text": "$300k-$600k"},
+            {"tier": 5, "text": "$600k+"},
         ],
         "cn_options": [
-            {"tier": 1, "text": "很低 (<15万)"},
-            {"tier": 2, "text": "偏低 (15-30万)"},
-            {"tier": 3, "text": "中等 (30-60万)"},
-            {"tier": 4, "text": "较高 (60-120万)"},
-            {"tier": 5, "text": "很高 (120万+)"},
-        ],
-    },
-    {
-        "id": 2,
-        "category": "职业与财务硬件",
-        "title": "住房压力",
-        "type": "dual_select",
-        "tiers": 5,
-        "us_label": "你在美国的住房压力",
-        "cn_label": "你回国后的住房压力",
-        "us_options": [
-            {"tier": 1, "text": "压力极大 (房收比>45%/买不起)"},
-            {"tier": 2, "text": "压力较大 (房收比35-45%)"},
-            {"tier": 3, "text": "压力一般 (房收比25-35%)"},
-            {"tier": 4, "text": "压力较小 (房收比15-25%)"},
-            {"tier": 5, "text": "几乎无压力 (房收比<15%/已有房)"},
-        ],
-        "cn_options": [
-            {"tier": 1, "text": "压力极大 (一线无房无指标/地狱级房贷)"},
-            {"tier": 2, "text": "压力较大 (需大额贷款)"},
-            {"tier": 3, "text": "压力一般 (公积金部分覆盖)"},
-            {"tier": 4, "text": "压力较小 (家里有部分支持)"},
-            {"tier": 5, "text": "几乎无压力 (家里已备房/老家有房)"},
-        ],
-    },
-    {
-        "id": 3,
-        "category": "职业与财务硬件",
-        "title": "工作节奏与生活平衡 (WLB)",
-        "type": "dual_select",
-        "tiers": 5,
-        "us_label": "你在美国的工作节奏",
-        "cn_label": "你回国后的工作节奏预期",
-        "us_options": [
-            {"tier": 1, "text": "非常高压 (60h+/PIP淘汰制)"},
-            {"tier": 2, "text": "较高压 (50-60h)"},
-            {"tier": 3, "text": "正常 (40-50h)"},
-            {"tier": 4, "text": "较轻松 (35-40h)"},
-            {"tier": 5, "text": "非常轻松 (<35h/极致WLB)"},
-        ],
-        "cn_options": [
-            {"tier": 1, "text": "非常高压 (996/大小周/55h+)"},
-            {"tier": 2, "text": "较高压 (经常加班)"},
-            {"tier": 3, "text": "正常 (40-50h/偶尔加班)"},
-            {"tier": 4, "text": "较轻松 (955体制内)"},
-            {"tier": 5, "text": "非常轻松 (极度稳定955/弹性)"},
-        ],
-    },
-    {
-        "id": 4,
-        "category": "职业与财务硬件",
-        "title": "全年带薪休假 (PTO)",
-        "type": "dual_select",
-        "tiers": 5,
-        "us_label": "你在美国的带薪假天数",
-        "cn_label": "你回国后的带薪假预期",
-        "us_options": [
-            {"tier": 1, "text": "很少 (<5天)"},
-            {"tier": 2, "text": "偏少 (5-10天)"},
-            {"tier": 3, "text": "一般 (10-15天)"},
-            {"tier": 4, "text": "较多 (15-20天)"},
-            {"tier": 5, "text": "很多 (20天+/无限PTO)"},
-        ],
-        "cn_options": [
-            {"tier": 1, "text": "很少 (5天基础/请假极难)"},
-            {"tier": 2, "text": "偏少 (5-10天)"},
-            {"tier": 3, "text": "一般 (10-15天)"},
-            {"tier": 4, "text": "较多 (15-20天)"},
-            {"tier": 5, "text": "很多 (20天+/体制内)"},
+            {"tier": 1, "text": "<15万"},
+            {"tier": 2, "text": "15-30万"},
+            {"tier": 3, "text": "30-60万"},
+            {"tier": 4, "text": "60-120万"},
+            {"tier": 5, "text": "120万+"},
         ],
     },
     {
         "id": 5,
         "category": "职业与财务硬件",
-        "title": "职场寿命与年龄压力",
+        "title": "住房支出压力对比",
+        "type": "dual_select",
+        "tiers": 5,
+        "us_label": "你在美国的住房压力",
+        "cn_label": "你回国后的住房压力",
+        "us_options": [
+            {"tier": 1, "text": "极重（>45%收入）"},
+            {"tier": 2, "text": "较重 (35-45%)"},
+            {"tier": 3, "text": "一般 (25-35%)"},
+            {"tier": 4, "text": "较轻 (15-25%)"},
+            {"tier": 5, "text": "极轻 (<15%/已有房)"},
+        ],
+        "cn_options": [
+            {"tier": 1, "text": "极重（>45%收入）"},
+            {"tier": 2, "text": "较重 (35-45%)"},
+            {"tier": 3, "text": "一般 (25-35%)"},
+            {"tier": 4, "text": "较轻 (15-25%)"},
+            {"tier": 5, "text": "极轻 (<15%/已有房)"},
+        ],
+    },
+    {
+        "id": 6,
+        "category": "职业与财务硬件",
+        "title": "工作强度与边界感 (WLB)",
+        "type": "dual_select",
+        "tiers": 5,
+        "us_label": "你在美国的工作强度",
+        "cn_label": "你回国后的工作强度预期",
+        "us_options": [
+            {"tier": 1, "text": "极其高压 (>60h/随时待命)"},
+            {"tier": 2, "text": "较忙碌 (50-60h)"},
+            {"tier": 3, "text": "标准 (40-50h)"},
+            {"tier": 4, "text": "较平衡 (35-40h)"},
+            {"tier": 5, "text": "极度平衡 (<35h/不加班)"},
+        ],
+        "cn_options": [
+            {"tier": 1, "text": "极其高压 (>60h/随时待命)"},
+            {"tier": 2, "text": "较忙碌 (50-60h)"},
+            {"tier": 3, "text": "标准 (40-50h)"},
+            {"tier": 4, "text": "较平衡 (35-40h)"},
+            {"tier": 5, "text": "极度平衡 (<35h/不加班)"},
+        ],
+    },
+    {
+        "id": 7,
+        "category": "职业与财务硬件",
+        "title": "全年带薪年假 (PTO)",
+        "type": "dual_select",
+        "tiers": 5,
+        "us_label": "你在美国的带薪假天数",
+        "cn_label": "你回国后的带薪假预期",
+        "us_options": [
+            {"tier": 1, "text": "<5天"},
+            {"tier": 2, "text": "5-10天"},
+            {"tier": 3, "text": "10-15天"},
+            {"tier": 4, "text": "15-20天"},
+            {"tier": 5, "text": "20天+"},
+        ],
+        "cn_options": [
+            {"tier": 1, "text": "<5天"},
+            {"tier": 2, "text": "5-10天"},
+            {"tier": 3, "text": "10-15天"},
+            {"tier": 4, "text": "15-20天"},
+            {"tier": 5, "text": "20天+"},
+        ],
+    },
+    {
+        "id": 8,
+        "category": "职业与财务硬件",
+        "title": "职场年龄文化压力",
         "type": "dual_select",
         "tiers": 5,
         "us_label": "你在美国的职场年龄压力",
         "cn_label": "你回国后的职场年龄压力",
         "us_options": [
-            {"tier": 1, "text": "压力极大 (行业有隐性年龄歧视)"},
-            {"tier": 2, "text": "压力较大"},
-            {"tier": 3, "text": "一般 (不明显)"},
-            {"tier": 4, "text": "压力较小 (反年龄歧视法保护)"},
-            {"tier": 5, "text": "几乎无压力 (越老越值钱)"},
+            {"tier": 1, "text": "压力极大 (有硬性门槛)"},
+            {"tier": 2, "text": "较有压力"},
+            {"tier": 3, "text": "中规中矩"},
+            {"tier": 4, "text": "压力较小"},
+            {"tier": 5, "text": "极无压力 (看重资历)"},
         ],
         "cn_options": [
-            {"tier": 1, "text": "压力极大 (面临35岁裁员红线)"},
-            {"tier": 2, "text": "压力较大 (行业偏好年轻人)"},
-            {"tier": 3, "text": "一般 (行业不太看年龄)"},
-            {"tier": 4, "text": "压力较小 (体制内/专业领域)"},
-            {"tier": 5, "text": "几乎无压力 (越老越吃香)"},
+            {"tier": 1, "text": "压力极大 (有硬性门槛)"},
+            {"tier": 2, "text": "较有压力"},
+            {"tier": 3, "text": "中规中矩"},
+            {"tier": 4, "text": "压力较小"},
+            {"tier": 5, "text": "极无压力 (看重资历)"},
         ],
     },
 
-    # --- Q6-Q9: 双轴3档 (中美分别选档) ---
+    # --- Q9-Q12: 双轴3档 ---
     {
-        "id": 6,
+        "id": 9,
         "category": "职业与财务硬件",
         "title": "裁员风险与失业缓冲",
         "type": "dual_select",
@@ -161,251 +201,278 @@ QUESTIONS = [
         "us_label": "你在美国的失业风险与缓冲",
         "cn_label": "你回国后的失业风险与缓冲",
         "us_options": [
-            {"tier": 1, "text": "高风险 (签证受限，失业60天内必须离境)"},
-            {"tier": 2, "text": "中等 (有一定缓冲期，但仍受身份约束)"},
-            {"tier": 3, "text": "低风险 (绿卡/公民，充足失业保障)"},
+            {"tier": 1, "text": "高风险 (签证强绑定)"},
+            {"tier": 2, "text": "中等"},
+            {"tier": 3, "text": "低风险 (身份自由/福利好)"},
         ],
         "cn_options": [
-            {"tier": 1, "text": "高风险 (行业不稳/35岁危机)"},
-            {"tier": 2, "text": "中等 (普通行业波动)"},
-            {"tier": 3, "text": "低风险 (体制内/铁饭碗)"},
+            {"tier": 1, "text": "高风险 (行业下行/35岁)"},
+            {"tier": 2, "text": "中等"},
+            {"tier": 3, "text": "低风险 (编制/铁饭碗)"},
         ],
     },
     {
-        "id": 7,
+        "id": 10,
         "category": "职业与财务硬件",
-        "title": "副业与额外收入渠道",
+        "title": "副业与额外收入可能性",
         "type": "dual_select",
         "tiers": 3,
         "us_label": "你在美国做副业的可行性",
         "cn_label": "你回国后做副业的可行性",
         "us_options": [
-            {"tier": 1, "text": "受限 (签证明确禁止W2外收入)"},
-            {"tier": 2, "text": "一般 (身份允许但机会有限)"},
-            {"tier": 3, "text": "自由 (无身份限制，副业空间大)"},
+            {"tier": 1, "text": "受限/极难"},
+            {"tier": 2, "text": "一般/有空间"},
+            {"tier": 3, "text": "自由/土壤肥沃"},
         ],
         "cn_options": [
-            {"tier": 1, "text": "受限 (行业/精力限制，难以开展)"},
-            {"tier": 2, "text": "一般 (有一定空间)"},
-            {"tier": 3, "text": "自由 (自媒体/电商土壤极佳)"},
+            {"tier": 1, "text": "受限/极难"},
+            {"tier": 2, "text": "一般/有空间"},
+            {"tier": 3, "text": "自由/土壤肥沃"},
         ],
     },
     {
-        "id": 8,
+        "id": 11,
         "category": "职业与财务硬件",
-        "title": "创业环境与资源",
+        "title": "创业环境与资源获取",
         "type": "dual_select",
         "tiers": 3,
         "us_label": "你在美国的创业条件",
         "cn_label": "你回国后的创业条件",
         "us_options": [
-            {"tier": 1, "text": "不利 (身份壁垒大/人力成本高/无资源)"},
-            {"tier": 2, "text": "一般 (有一定资源和可能性)"},
-            {"tier": 3, "text": "有利 (有技术/风投/本土创业资源)"},
+            {"tier": 1, "text": "不利/缺资源"},
+            {"tier": 2, "text": "一般"},
+            {"tier": 3, "text": "有利/资源丰富"},
         ],
         "cn_options": [
-            {"tier": 1, "text": "不利 (无资源/高竞争/缺人脉)"},
-            {"tier": 2, "text": "一般 (有一定供应链和市场渠道)"},
-            {"tier": 3, "text": "有利 (供应链优势/政策补贴/家族资源)"},
+            {"tier": 1, "text": "不利/缺资源"},
+            {"tier": 2, "text": "一般"},
+            {"tier": 3, "text": "有利/资源丰富"},
         ],
     },
     {
-        "id": 9,
+        "id": 12,
         "category": "职业与财务硬件",
-        "title": "行业发展前景与晋升空间",
+        "title": "行业长期发展天花板",
         "type": "dual_select",
         "tiers": 3,
         "us_label": "你所在行业在美国的前景",
         "cn_label": "你所在行业在国内的前景",
         "us_options": [
-            {"tier": 1, "text": "前景不佳 (行业衰退/天花板明显)"},
-            {"tier": 2, "text": "前景一般 (行业稳定，无明显优势)"},
-            {"tier": 3, "text": "前景很好 (行业上升期/技术前沿)"},
+            {"tier": 1, "text": "前景欠佳/下行"},
+            {"tier": 2, "text": "稳定期"},
+            {"tier": 3, "text": "极具潜力/风口"},
         ],
         "cn_options": [
-            {"tier": 1, "text": "前景不佳 (行业严重内卷/下行)"},
-            {"tier": 2, "text": "前景一般 (行业稳定)"},
-            {"tier": 3, "text": "前景很好 (高速发展/政策扶持/风口)"},
+            {"tier": 1, "text": "前景欠佳/下行"},
+            {"tier": 2, "text": "稳定期"},
+            {"tier": 3, "text": "极具潜力/风口"},
         ],
     },
 
-    # ===== 大类二：身份与生活方式 =====
+    # ===== 第三部分：身份与生活方式 (ID 13-21) =====
     {
-        "id": 10,
+        "id": 13,
         "category": "身份与生活方式",
         "title": "留美的客观身份状态（硬壁垒）",
         "type": "single_choice",
         "options": [
-            {"label": "A", "text": "已拥有绿卡、国籍，或 I-140 已批，无任何身份焦虑", "scores": (5, 1)},
-            {"label": "B", "text": "抽中 H1B/OPT 期间，仍在排期初期，有路径但存隐患", "scores": (3, 3)},
-            {"label": "C", "text": "OPT 即期未中签或依靠 CPT 挂靠，随时面临断档被动回国", "scores": (1, 5)},
-        ],
-    },
-    {
-        "id": 11,
-        "category": "身份与生活方式",
-        "title": "预想回国常驻地的户口难度",
-        "type": "single_choice",
-        "options": [
-            {"label": "A", "text": "目标一线城市且完全无指标，面临长期排队或严苛购房/落户条件", "scores": (4, 2)},
-            {"label": "B", "text": "目标城市无落户门槛，留学生身份随时可落", "scores": (3, 3)},
-            {"label": "C", "text": "老家即是目标城市，或早已拥有户口，毫无阻力", "scores": (1, 5)},
-        ],
-    },
-    {
-        "id": 12,
-        "category": "身份与生活方式",
-        "title": "本地文娱内容与生态偏好",
-        "type": "single_choice",
-        "options": [
-            {"label": "A", "text": "极度享受北美文娱 (Livehouse / 体育赛事 / 英文脱口秀 / 派对)", "scores": (5, 1)},
-            {"label": "B", "text": "双语/跨文化自洽型，两边文娱形式都能获得快乐", "scores": (3, 3)},
-            {"label": "C", "text": "深度绑定国内语境 (中文脱口秀 / 剧本杀 / 密室 / 国内互联网生态)", "scores": (1, 5)},
-        ],
-    },
-    {
-        "id": 13,
-        "category": "身份与生活方式",
-        "title": "休闲旅行导向",
-        "type": "single_choice",
-        "options": [
-            {"label": "A", "text": "极致自然派：热爱硬核户外、国家公园探险、高山滑雪", "scores": (5, 1)},
-            {"label": "B", "text": "兼而有之：自然与都市都喜欢，无明显偏好", "scores": (3, 3)},
-            {"label": "C", "text": "繁华都市派：热爱 Citywalk、密集的高端餐饮探店、便利商业", "scores": (1, 5)},
+            {"label": "A", "text": "身份极度稳固（绿卡/公民/I-140已批）", "scores": (5, 1)},
+            {"label": "B", "text": "身份过渡期，有明确预期（H1B平稳/排期中）", "scores": (4, 2)},
+            {"label": "C", "text": "身份观察期（OPT/STEM中，有抽签机会）", "scores": (3, 3)},
+            {"label": "D", "text": "身份不确定性大（OPT首年/抽签多次未中）", "scores": (2, 4)},
+            {"label": "E", "text": "身份面临断档（需挂靠CPT/即将到期）", "scores": (1, 5)},
         ],
     },
     {
         "id": 14,
         "category": "身份与生活方式",
-        "title": "饮食硬性基因（中国胃）",
+        "title": "目标城市落户及安居门槛",
         "type": "single_choice",
         "options": [
-            {"label": "A", "text": "全球胃：完全适应欧美沙拉/简餐，或极其享受自己下厨做饭", "scores": (5, 1)},
-            {"label": "B", "text": "混合型：有普通中餐馆和亚超即可存活", "scores": (3, 3)},
-            {"label": "C", "text": "顽固中国胃：极度依赖国内丰富廉价的地道外卖/夜宵且厌恶做饭", "scores": (1, 5)},
+            {"label": "A", "text": "极难落户且无配套资源（如北京严苛指标）", "scores": (5, 1)},
+            {"label": "B", "text": "有一定门槛但可通过积分/时间解决", "scores": (4, 2)},
+            {"label": "C", "text": "门槛适中，符合留学生基本政策", "scores": (3, 3)},
+            {"label": "D", "text": "门槛极低，基本实现自由迁徙", "scores": (2, 4)},
+            {"label": "E", "text": "零门槛（已有户口或老家即目标地）", "scores": (1, 5)},
         ],
     },
     {
         "id": 15,
         "category": "身份与生活方式",
-        "title": "物理出行依赖度",
+        "title": "本地文娱内容共鸣度",
         "type": "single_choice",
         "options": [
-            {"label": "A", "text": "车轮上的生活：热爱自驾与北美汽车文化，极其讨厌公共交通", "scores": (5, 1)},
-            {"label": "B", "text": "无缝切换：两边都能适应", "scores": (3, 3)},
-            {"label": "C", "text": "极度抗拒开车：严重依赖国内发达的高铁与城市地铁网络", "scores": (1, 5)},
+            {"label": "A", "text": "高度共鸣北美文娱（英文脱口秀/美式社交/本土赛事）", "scores": (5, 1)},
+            {"label": "B", "text": "较偏好北美形式，但也能欣赏国内内容", "scores": (4, 2)},
+            {"label": "C", "text": "跨文化自洽，两边均能获得同等乐趣", "scores": (3, 3)},
+            {"label": "D", "text": "较偏好国内语境（中文线下演出/社交游戏/国内生态）", "scores": (2, 4)},
+            {"label": "E", "text": "深度绑定国内语境（极度依赖中文圈层和线下形式）", "scores": (1, 5)},
         ],
     },
     {
         "id": 16,
         "category": "身份与生活方式",
-        "title": "核心社交性格",
+        "title": "休闲旅行偏好梯度",
         "type": "single_choice",
         "options": [
-            {"label": "A", "text": "极度看重人际边界感 / 享受孤独与独处 / 俗称「社恐」", "scores": (5, 1)},
-            {"label": "B", "text": "适应性强，动静皆宜", "scores": (3, 3)},
-            {"label": "C", "text": "极度渴望「烟火气」与深度的熟人高频社交", "scores": (1, 5)},
+            {"label": "A", "text": "极度推崇硬核自然/国家公园/极限运动", "scores": (5, 1)},
+            {"label": "B", "text": "较偏好自然风光，偶尔享受城市便利", "scores": (4, 2)},
+            {"label": "C", "text": "兼而有之，随遇而安", "scores": (3, 3)},
+            {"label": "D", "text": "较偏好城市繁华，喜欢高密度商业探店", "scores": (2, 4)},
+            {"label": "E", "text": "极度依赖现代都市便利/商圈/高度发达的服务业", "scores": (1, 5)},
         ],
     },
     {
         "id": 17,
         "category": "身份与生活方式",
-        "title": "性取向与少数群体身份",
+        "title": "饮食基因与生活成本感官",
         "type": "single_choice",
         "options": [
-            {"label": "A", "text": "属于 LGBTQ+ 等群体，极其依赖美国婚姻合法化与职场平权法案", "scores": (5, 1)},
-            {"label": "B", "text": "顺性别异性恋，无特殊诉求", "scores": (3, 3)},
+            {"label": "A", "text": "完全适应当地饮食，或享受自炊生活", "scores": (5, 1)},
+            {"label": "B", "text": "以西餐为主，偶尔调节中餐", "scores": (4, 2)},
+            {"label": "C", "text": "混合型，有基础亚超即可满足", "scores": (3, 3)},
+            {"label": "D", "text": "较依赖中餐，对当地外卖/餐饮便捷度有要求", "scores": (2, 4)},
+            {"label": "E", "text": "极度依赖国内餐饮体系（外卖/夜宵/极致地道中餐）", "scores": (1, 5)},
         ],
     },
     {
         "id": 18,
         "category": "身份与生活方式",
-        "title": "性别与社会时钟期待",
+        "title": "物理出行方式偏好",
         "type": "single_choice",
         "options": [
-            {"label": "A", "text": "女性，且极其看重北美职场对婚育的宽容度，抗拒国内催婚催育氛围", "scores": (4, 2)},
-            {"label": "B", "text": "无显著性别带来的发展/催婚阻力", "scores": (3, 3)},
+            {"label": "A", "text": "极度热爱驾驶/汽车文化，享受路权", "scores": (5, 1)},
+            {"label": "B", "text": "习惯驾驶，不排斥开车出行", "scores": (4, 2)},
+            {"label": "C", "text": "随环境切换，对出行方式不敏感", "scores": (3, 3)},
+            {"label": "D", "text": "较依赖公共交通，觉得开车是负担", "scores": (2, 4)},
+            {"label": "E", "text": "极度依赖高铁/地铁/打车，拒绝自驾", "scores": (1, 5)},
         ],
     },
-
-    # ===== 大类三：家庭、情感与社会资本 =====
     {
         "id": 19,
-        "category": "家庭、情感与社会资本",
-        "title": "原生家庭结构与照料义务",
+        "category": "身份与生活方式",
+        "title": "社交性格与边界感需求",
         "type": "single_choice",
         "options": [
-            {"label": "A", "text": "非独生子女，国内有兄弟姐妹分担尽孝压力，可安心在海外", "scores": (5, 1)},
-            {"label": "B", "text": "独生子女，父母目前健康，暂无物理绑定需求", "scores": (3, 3)},
-            {"label": "C", "text": "独生子女，父母有基础病需物理照料，隐性推力拉满", "scores": (1, 5)},
+            {"label": "A", "text": "极度追求人际边界/隐私/独立生活空间", "scores": (5, 1)},
+            {"label": "B", "text": "比较享受美式简单社交关系", "scores": (4, 2)},
+            {"label": "C", "text": "适应力强，能融入不同社交氛围", "scores": (3, 3)},
+            {"label": "D", "text": "比较喜欢热闹，渴望紧密的朋友连接", "scores": (2, 4)},
+            {"label": "E", "text": "极度渴望\"烟火气\"与深度高频的人情社交", "scores": (1, 5)},
         ],
     },
     {
         "id": 20,
-        "category": "家庭、情感与社会资本",
-        "title": "父母财务兜底与房产赞助",
+        "category": "身份与生活方式",
+        "title": "性取向与少数群体权利诉求",
         "type": "single_choice",
         "options": [
-            {"label": "A", "text": "无赞助：父母无力提供购房支持，甚至需要子女寄钱反哺", "scores": (3, 3)},
-            {"label": "B", "text": "中产自给：父母有完善退休金，无需反哺也无法提供大额赞助", "scores": (3, 3)},
-            {"label": "C", "text": "强力兜底：父母已在一线备好全款婚房，或能提供巨额启动资金", "scores": (1, 5)},
+            {"label": "A", "text": "有强烈的平权法案/少数群体社会保障需求", "scores": (5, 1)},
+            {"label": "B", "text": "对相关社会包容度有较高期待", "scores": (4, 2)},
+            {"label": "C", "text": "无特殊诉求，环境适应性强", "scores": (3, 3)},
         ],
     },
     {
         "id": 21,
-        "category": "家庭、情感与社会资本",
-        "title": "父母口头/精神施压度",
+        "category": "身份与生活方式",
+        "title": "性别角色与社会期待压力",
         "type": "single_choice",
         "options": [
-            {"label": "A", "text": "父母极其开明，明确要求/支持你在海外定居发展", "scores": (5, 1)},
-            {"label": "B", "text": "父母态度中立，尊重子女选择", "scores": (3, 3)},
-            {"label": "C", "text": "父母在精神/情绪上极度依赖，长期高压要求必须回国", "scores": (1, 5)},
+            {"label": "A", "text": "极度抗拒传统的婚育压力和社会时钟期待", "scores": (5, 1)},
+            {"label": "B", "text": "比较喜欢北美相对宽松的个人选择环境", "scores": (4, 2)},
+            {"label": "C", "text": "无明显感触或能平衡两地压力", "scores": (3, 3)},
         ],
     },
+
+    # ===== 第四部分：家庭、情感与社会资本 (ID 22-28) =====
     {
         "id": 22,
         "category": "家庭、情感与社会资本",
-        "title": "国内核心特权与人脉资产",
+        "title": "原生家庭照料义务现状",
         "type": "single_choice",
         "options": [
-            {"label": "A", "text": "国内零背景，极其反感人情社会酒桌文化，回国面临高内卷", "scores": (5, 1)},
-            {"label": "B", "text": "有普通熟人网，能解决看病排号等小事，但不构成核心壁垒", "scores": (3, 3)},
-            {"label": "C", "text": "家族有硬核政商资源，能安排体制内/垄断行业，或有企业接班", "scores": (1, 5)},
+            {"label": "A", "text": "毫无物理绑定压力（非独生/父母极其独立）", "scores": (5, 1)},
+            {"label": "B", "text": "压力较小，短期内无需回国处理家庭事务", "scores": (4, 2)},
+            {"label": "C", "text": "处于平衡状态，可跨国远程兼顾", "scores": (3, 3)},
+            {"label": "D", "text": "有潜在照料需求（独生/父母开始老龄化）", "scores": (2, 4)},
+            {"label": "E", "text": "物理绑定极强（父母患病/必须在身边照料）", "scores": (1, 5)},
         ],
     },
     {
         "id": 23,
         "category": "家庭、情感与社会资本",
-        "title": "伴侣的职业地域对口度 (Two-body Problem)",
+        "title": "父母财务支持与兜底能力",
         "type": "single_choice",
         "options": [
-            {"label": "A", "text": "单身；或伴侣在美国拥有极佳的职业发展/稳定身份", "scores": (5, 1)},
-            {"label": "B", "text": "伴侣在美国的发展整体优于国内", "scores": (4, 2)},
-            {"label": "C", "text": "伴侣职业两地均可无缝衔接", "scores": (3, 3)},
-            {"label": "D", "text": "伴侣在国内的发展整体优于美国", "scores": (2, 4)},
-            {"label": "E", "text": "伴侣职业极度依赖国内土壤 (国内自媒体/演艺/体制)，赴美即失业", "scores": (1, 5)},
+            {"label": "A", "text": "需反哺：父母无保障，需子女持续经济支援", "scores": (3, 3)},
+            {"label": "B", "text": "自给自足：无负担但也无大额支持", "scores": (3, 3)},
+            {"label": "C", "text": "有一定支持：能提供部分首付或资源助力", "scores": (2, 4)},
+            {"label": "D", "text": "强力支持：能在一线城市全款供房或提供事业启动资金", "scores": (1, 5)},
         ],
     },
     {
         "id": 24,
         "category": "家庭、情感与社会资本",
-        "title": "单身状态下的择偶基数（已婚选B）",
+        "title": "父母对去留的主观施压程度",
         "type": "single_choice",
         "options": [
-            {"label": "A", "text": "身处大农村或性别极度失衡行业，符合标准的择偶池极小", "scores": (1, 5)},
-            {"label": "B", "text": "身处大都会，或接受跨文化恋爱，当地华人/非华人池子庞大", "scores": (3, 3)},
+            {"label": "A", "text": "极度支持留美，甚至主动要求你留下", "scores": (5, 1)},
+            {"label": "B", "text": "比较倾向你留下，但尊重个人意愿", "scores": (4, 2)},
+            {"label": "C", "text": "完全中立，不给任何建议", "scores": (3, 3)},
+            {"label": "D", "text": "比较希望你回国，经常口头催促", "scores": (2, 4)},
+            {"label": "E", "text": "极度施压，以各种方式强制要求回国", "scores": (1, 5)},
         ],
     },
     {
         "id": 25,
         "category": "家庭、情感与社会资本",
-        "title": "对下一代基础教育的偏好",
+        "title": "国内社会关系与资源杠杆（人脉）",
         "type": "single_choice",
         "options": [
-            {"label": "A", "text": "推崇北美素质/快乐教育，反感国内做题家内卷", "scores": (5, 1)},
-            {"label": "B", "text": "无所谓，教育不影响去留决策", "scores": (3, 3)},
-            {"label": "C", "text": "丁克一族，无生育计划", "scores": (3, 3)},
-            {"label": "D", "text": "推崇国内公立体制扎实的数理化，或已拥有国内顶尖学区房", "scores": (1, 5)},
+            {"label": "A", "text": "零背景：反感应酬文化，国内职场需从零起步", "scores": (5, 1)},
+            {"label": "B", "text": "普通背景：仅有基本社交圈，无职场助力", "scores": (4, 2)},
+            {"label": "C", "text": "有一定熟人网：能解决琐碎生活问题", "scores": (3, 3)},
+            {"label": "D", "text": "较强资源：在特定行业有深厚人脉，能获职业优待", "scores": (2, 4)},
+            {"label": "E", "text": "核心特权：家族资源可直接变现或继承事业", "scores": (1, 5)},
+        ],
+    },
+    {
+        "id": 26,
+        "category": "家庭、情感与社会资本",
+        "title": "伴侣的职业地域对口度 (Two-body Problem)",
+        "type": "single_choice",
+        "options": [
+            {"label": "A", "text": "单身/伴侣极其适合在美发展（或已有身份）", "scores": (5, 1)},
+            {"label": "B", "text": "伴侣偏好留美，职业有一定竞争力", "scores": (4, 2)},
+            {"label": "C", "text": "伴侣两地均可，随你而动", "scores": (3, 3)},
+            {"label": "D", "text": "伴侣偏好回国，国内有更好发展机会", "scores": (2, 4)},
+            {"label": "E", "text": "伴侣极度依赖国内环境（赴美即失业）", "scores": (1, 5)},
+        ],
+    },
+    {
+        "id": 27,
+        "category": "家庭、情感与社会资本",
+        "title": "择偶池与婚恋市场适配度",
+        "type": "single_choice",
+        "options": [
+            {"label": "A", "text": "美国择偶环境极佳（社交圈广/接受跨文化）", "scores": (5, 1)},
+            {"label": "B", "text": "比较适应目前的海外婚恋节奏", "scores": (4, 2)},
+            {"label": "C", "text": "已婚或对婚恋无所谓", "scores": (3, 3)},
+            {"label": "D", "text": "感觉海外池子太小，期待国内更高的匹配效率", "scores": (2, 4)},
+            {"label": "E", "text": "极度依赖国内婚恋市场（家庭介绍/相亲/共同背景）", "scores": (1, 5)},
+        ],
+    },
+    {
+        "id": 28,
+        "category": "家庭、情感与社会资本",
+        "title": "对下一代教育模式的客观倾向",
+        "type": "single_choice",
+        "options": [
+            {"label": "A", "text": "极度推崇北美素质/快乐教育模式", "scores": (5, 1)},
+            {"label": "B", "text": "比较认可海外教育环境", "scores": (4, 2)},
+            {"label": "C", "text": "丁克或认为教育不应成为决定因素", "scores": (3, 3)},
+            {"label": "D", "text": "比较认可国内基础教育的扎实程度", "scores": (2, 4)},
+            {"label": "E", "text": "极度依赖国内体制内名校/学区资源", "scores": (1, 5)},
         ],
     },
 ]
@@ -424,11 +491,9 @@ def get_questions_for_frontend():
             "title": q["title"],
             "type": q["type"],
         }
-        if q["type"] == "age_input":
-            item["description"] = q["description"]
-            item["min_age"] = 20
-            item["auto_weight"] = True  # 前端不显示权重选择
-        elif q["type"] == "dual_select":
+        if "auto_weight" in q:
+            item["auto_weight"] = True
+        if q["type"] == "dual_select":
             item["tiers"] = q["tiers"]
             item["us_label"] = q["us_label"]
             item["cn_label"] = q["cn_label"]
@@ -441,17 +506,6 @@ def get_questions_for_frontend():
             ]
         result.append(item)
     return result
-
-
-def get_age_scores(age: int) -> tuple[int, int]:
-    """根据年龄返回 (US_Base_Score, CN_Base_Score)"""
-    age_q = _QUESTION_MAP[0]
-    for r in age_q["age_ranges"]:
-        if r["min"] <= age <= r["max"]:
-            return r["scores"]
-    if age < 20:
-        return (1, 5)
-    return (5, 1)  # 35+ 同 32-35
 
 
 def get_dual_scores(question_id: int, us_tier: int, cn_tier: int) -> tuple[int, int]:

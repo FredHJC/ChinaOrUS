@@ -9,7 +9,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./backend/decision_matrix.db:/app/decision_matrix.db
+      - ./backend/decision_matrix_v2.db:/app/decision_matrix_v2.db
     restart: unless-stopped
     networks:
       - chinaorus-network

@@ -16,12 +16,16 @@ __pycache__/
 .venv/
 venv/
 
-# IDE
+# Database
+*.db
+
+# IDE / Editor
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+*.code-workspace
 
 # OS
 .DS_Store
@@ -30,5 +34,6 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
-backend/decision_matrix.db
-backend/decision_matrix.db
+
+# Generated files
+decision_matrix_scatter.png

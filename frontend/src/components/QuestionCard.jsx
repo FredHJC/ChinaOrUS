@@ -1,4 +1,4 @@
-import { Card, Radio, Space, Slider, InputNumber, Typography, Row, Col, Tag } from 'antd';
+import { Card, Radio, Space, Slider, Typography, Row, Col, Tag } from 'antd';
 
 const { Text } = Typography;
 
@@ -11,18 +11,10 @@ const weightMarks = {
 };
 
 export default function QuestionCard({ question, index, answer, onAnswerChange }) {
-  const isAge = question.type === 'age_input';
   const isDual = question.type === 'dual_select';
-  const hideWeight = isAge && question.auto_weight;
 
   const handleOptionChange = (e) => {
     onAnswerChange(question.id, { ...answer, selected_option: e.target.value });
-  };
-
-  const handleAgeChange = (value) => {
-    if (value !== null) {
-      onAnswerChange(question.id, { ...answer, age: value });
-    }
   };
 
   const handleWeightChange = (value) => {
@@ -47,20 +39,6 @@ export default function QuestionCard({ question, index, answer, onAnswerChange }
         </div>
       }
     >
-      {isAge && (
-        <div style={{ marginBottom: 24 }}>
-          <Text style={{ display: 'block', marginBottom: 12 }}>{question.description}</Text>
-          <InputNumber
-            min={question.min_age}
-            value={answer?.age}
-            onChange={handleAgeChange}
-            style={{ width: 200 }}
-            placeholder="请输入年龄（20起）"
-            size="large"
-          />
-        </div>
-      )}
-
       {isDual && (
         <Row gutter={24} style={{ marginBottom: 24 }}>
           <Col xs={24} md={12}>
@@ -138,7 +116,7 @@ export default function QuestionCard({ question, index, answer, onAnswerChange }
         </Row>
       )}
 
-      {!isAge && !isDual && (
+      {!isDual && (
         <Radio.Group
           value={answer?.selected_option}
           onChange={handleOptionChange}
@@ -166,7 +144,7 @@ export default function QuestionCard({ question, index, answer, onAnswerChange }
         </Radio.Group>
       )}
 
-      {!hideWeight && (
+      {!question.auto_weight && (
         <div style={{ padding: '0 8px' }}>
           <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
             这一项对你有多重要？

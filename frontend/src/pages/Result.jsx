@@ -49,14 +49,49 @@ export default function Result() {
     if (!exportRef.current) return;
     setExporting(true);
     try {
-      const canvas = await html2canvas(exportRef.current, {
+      const el = exportRef.current;
+      const origStyle = el.style.cssText;
+
+      // Force desktop-width layout off-screen for consistent capture
+      const EXPORT_W = 800;
+      el.style.cssText = `
+        width: ${EXPORT_W}px;
+        position: fixed;
+        left: -9999px;
+        top: 0;
+        background: #fff;
+        padding: 16px;
+      `;
+
+      // Trigger ECharts chart resize to new width
+      window.dispatchEvent(new Event('resize'));
+      await new Promise((r) => setTimeout(r, 800));
+
+      const rawCanvas = await html2canvas(el, {
         scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
         logging: false,
       });
-      const dataUrl = canvas.toDataURL('image/png');
-      setPreviewUrl(dataUrl);
+
+      // Restore original layout immediately
+      el.style.cssText = origStyle;
+      window.dispatchEvent(new Event('resize'));
+
+      // Create final canvas with 3:4 (width:height) ratio
+      const finalW = rawCanvas.width;
+      const finalH = Math.max(Math.round(finalW * 4 / 3), rawCanvas.height);
+      const finalCanvas = document.createElement('canvas');
+      finalCanvas.width = finalW;
+      finalCanvas.height = finalH;
+      const ctx = finalCanvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, finalW, finalH);
+      // Center content vertically in the 4:3 frame
+      const yOffset = Math.round((finalH - rawCanvas.height) / 2);
+      ctx.drawImage(rawCanvas, 0, yOffset);
+
+      setPreviewUrl(finalCanvas.toDataURL('image/png'));
     } catch (err) {
       console.error(err);
       message.error('生成图片失败，请重试');
@@ -95,11 +130,17 @@ export default function Result() {
         测试结果
       </Title>
 
+      <div style={{ textAlign: 'center', marginBottom: 16 }}>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          手机端渲染效果可能不佳，建议尝试生成结果图片。
+        </Text>
+      </div>
+
       {/* 可导出区域 */}
       <div ref={exportRef} style={{ background: '#fff', padding: 16 }}>
         {/* 导出时显示的标题 */}
         <div style={{ textAlign: 'center', marginBottom: 16 }}>
-          <Title level={3} style={{ margin: 0 }}>留学生去留决策量表 - 测试报告</Title>
+          <Title level={3} style={{ margin: 0 }}>留学生去留决策量表 V2 - 测试报告</Title>
         </div>
 
         {/* 四象限图 */}

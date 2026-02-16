@@ -33,7 +33,7 @@ def generate_pdf(session_data: dict) -> bytes:
     生成 PDF 报告。
 
     session_data 包含:
-        session_id, age, us_total_score, cn_total_score,
+        session_id, us_total_score, cn_total_score,
         quadrant, quadrant_label, diagnosis, created_at
     """
     buf = io.BytesIO()
@@ -55,8 +55,6 @@ def generate_pdf(session_data: dict) -> bytes:
     c.drawString(30 * mm, y, f"测试编号: {session_data['session_id'][:8]}...")
     y -= 8 * mm
     c.drawString(30 * mm, y, f"测试时间: {session_data['created_at']}")
-    y -= 8 * mm
-    c.drawString(30 * mm, y, f"年龄: {session_data['age']}")
 
     # 结果
     y -= 16 * mm

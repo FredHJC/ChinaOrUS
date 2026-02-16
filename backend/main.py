@@ -15,7 +15,7 @@ from export import generate_pdf
 # 创建表
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="留学生去留决策量表 API")
+app = FastAPI(title="留学生去留决策量表 API (V2)")
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,27 +37,18 @@ def submit_answers(req: SubmitRequest, db: DBSession = Depends(get_db)):
     """提交答案，计算分数并存储"""
     dual_dicts = [a.model_dump() for a in req.dual_answers]
     single_dicts = [a.model_dump() for a in req.single_answers]
-    result = calculate_scores(req.age, dual_dicts, single_dicts)
+    result = calculate_scores(dual_dicts, single_dicts)
 
     session_id = str(uuid.uuid4())
 
     session = Session(
         id=session_id,
-        age=req.age,
         us_total_score=result["us_total_score"],
         cn_total_score=result["cn_total_score"],
         quadrant=result["quadrant"],
         diagnosis=result["diagnosis"],
     )
     db.add(session)
-
-    # 存年龄题答案
-    db.add(Answer(
-        session_id=session_id,
-        question_id=0,
-        selected_option=str(req.age),
-        weight=3,  # 自动权重
-    ))
 
     # 存双轴题答案
     for ans in req.dual_answers:
@@ -119,7 +110,6 @@ def get_result(session_id: str, db: DBSession = Depends(get_db)):
 
     return ResultResponse(
         session_id=session.id,
-        age=session.age,
         quadrant=session.quadrant,
         quadrant_label=quadrant_label,
         diagnosis=session.diagnosis,
@@ -144,7 +134,6 @@ def export_pdf(session_id: str, db: DBSession = Depends(get_db)):
 
     pdf_bytes = generate_pdf({
         "session_id": session.id,
-        "age": session.age,
         "us_total_score": session.us_total_score,
         "cn_total_score": session.cn_total_score,
         "quadrant": session.quadrant,

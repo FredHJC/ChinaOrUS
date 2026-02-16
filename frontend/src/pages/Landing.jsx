@@ -32,14 +32,14 @@ export default function Landing() {
           </div>
 
           <Title level={2} style={{ margin: 0 }}>
-            留学生去留决策量表
+            留学生去留决策量表 <Text style={{ fontSize: 16, color: '#764ba2', fontWeight: 'normal', verticalAlign: 'middle', border: '1px solid #764ba2', borderRadius: 6, padding: '2px 8px' }}>V2</Text>
           </Title>
           <Text type="secondary" style={{ fontSize: 16 }}>
             US vs China Decision Matrix
           </Text>
 
           <Paragraph style={{ fontSize: 15, textAlign: 'left', lineHeight: 1.8 }}>
-            这是一套基于 <Text strong>25 个核心维度</Text> 的科学量化工具，涵盖职业财务、身份生活、家庭情感三大领域。
+            这是一套基于 <Text strong>29 个核心维度</Text> 的科学量化工具，涵盖基础信息、职业财务、身份生活、家庭情感四大领域。
             通过你对每一项的客观现状选择和个人重视程度打分，系统将为你生成一份个性化的去留建议报告。
           </Paragraph>
 
@@ -48,11 +48,11 @@ export default function Landing() {
             style={{ background: '#f6f8fc', border: 'none', textAlign: 'left' }}
           >
             <Space direction="vertical" size={4}>
-              <Text><RocketOutlined style={{ marginRight: 8 }} />25 道精心设计的决策维度题</Text>
-              <Text><RocketOutlined style={{ marginRight: 8 }} />每题附带个人权重评估（1-5分）</Text>
-              <Text><RocketOutlined style={{ marginRight: 8 }} />四象限可视化散点图结果</Text>
-              <Text><RocketOutlined style={{ marginRight: 8 }} />精准诊断话术与决策建议</Text>
-              <Text><RocketOutlined style={{ marginRight: 8 }} />支持导出 PDF 报告</Text>
+              <Text strong style={{ color: '#764ba2' }}>V2 更新亮点</Text>
+              <Text><RocketOutlined style={{ marginRight: 8 }} />29 道决策维度题，新增性别、城市级别、来美年数</Text>
+              <Text><RocketOutlined style={{ marginRight: 8 }} />选项全面中立化，大部分题目扩展至 5 档渐变梯度</Text>
+              <Text><RocketOutlined style={{ marginRight: 8 }} />全新权重系数体系，更精准反映个人偏好</Text>
+              <Text><RocketOutlined style={{ marginRight: 8 }} />四象限可视化散点图 + 精准诊断建议</Text>
             </Space>
           </Card>
 

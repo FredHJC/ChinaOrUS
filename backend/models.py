@@ -12,7 +12,7 @@ class Session(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    age = Column(Integer, nullable=False)
+    version = Column(String, default="v2")
     us_total_score = Column(Float, nullable=False)
     cn_total_score = Column(Float, nullable=False)
     quadrant = Column(String, nullable=False)

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import ReactECharts from 'echarts-for-react';
 
 const QUADRANT_COLORS = {
@@ -14,9 +15,20 @@ const QUADRANT_LABELS = {
   us_low_cn_low: '破局重组派',
 };
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  return isMobile;
+}
+
 export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
   const { us_score, cn_score, threshold } = chartData;
   const userColor = QUADRANT_COLORS[quadrant] || '#3b82f6';
+  const isMobile = useIsMobile();
 
   // Group all historical points by quadrant
   const grouped = {};
@@ -39,7 +51,7 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
   const bgSeries = Object.entries(grouped).map(([q, points]) => ({
     type: 'scatter',
     name: QUADRANT_LABELS[q],
-    symbolSize: 6,
+    symbolSize: isMobile ? 4 : 6,
     itemStyle: {
       color: QUADRANT_COLORS[q],
       opacity: 0.45,
@@ -48,14 +60,28 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
     z: 2,
   }));
 
+  // Responsive sizes
+  const gridConfig = isMobile
+    ? { left: 45, right: 20, top: 60, bottom: 75 }
+    : { left: 80, right: 60, top: 80, bottom: 100 };
+
+  const titleFontSize = isMobile ? 14 : 18;
+  const subtextFontSize = isMobile ? 10 : 12;
+  const axisNameFontSize = isMobile ? 11 : 14;
+  const axisLabelFontSize = isMobile ? 10 : 12;
+  const legendFontSize = isMobile ? 10 : 11;
+  const quadrantLabelFontSize = isMobile ? 10 : 13;
+  const userLabelFontSize = isMobile ? 11 : 13;
+  const userSymbolSize = isMobile ? 10 : 14;
+
   const option = {
     title: {
       text: '去留决策四象限图',
       subtext: `共 ${allPoints.length} 人参与测试`,
       left: 'center',
-      top: 10,
-      textStyle: { fontSize: 18, fontWeight: 'bold' },
-      subtextStyle: { fontSize: 12, color: '#999' },
+      top: isMobile ? 4 : 10,
+      textStyle: { fontSize: titleFontSize, fontWeight: 'bold' },
+      subtextStyle: { fontSize: subtextFontSize, color: '#999' },
     },
     tooltip: {
       trigger: 'item',
@@ -69,44 +95,41 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
     legend: {
       bottom: 0,
       data: Object.values(QUADRANT_LABELS),
-      textStyle: { fontSize: 11 },
-      itemGap: 20,
+      textStyle: { fontSize: legendFontSize },
+      itemGap: isMobile ? 8 : 20,
+      itemWidth: isMobile ? 12 : 25,
+      itemHeight: isMobile ? 8 : 14,
     },
-    grid: {
-      left: 80,
-      right: 60,
-      top: 80,
-      bottom: 100,
-    },
+    grid: gridConfig,
     xAxis: {
-      name: '中国吸引力 →',
+      name: isMobile ? '中国 →' : '中国吸引力 →',
       nameLocation: 'middle',
-      nameGap: 45,
-      nameTextStyle: { fontSize: 14, fontWeight: 'bold' },
+      nameGap: isMobile ? 28 : 45,
+      nameTextStyle: { fontSize: axisNameFontSize, fontWeight: 'bold' },
       min: minVal,
       max: maxVal,
       splitLine: { show: true, lineStyle: { color: '#f0f0f0' } },
       axisLine: { lineStyle: { color: '#999' } },
-      axisLabel: { formatter: (v) => Math.round(v) },
+      axisLabel: { fontSize: axisLabelFontSize, formatter: (v) => Math.round(v) },
     },
     yAxis: {
-      name: '↑ 美国吸引力',
+      name: isMobile ? '↑ 美国' : '↑ 美国吸引力',
       nameLocation: 'middle',
-      nameGap: 50,
-      nameTextStyle: { fontSize: 14, fontWeight: 'bold' },
+      nameGap: isMobile ? 30 : 50,
+      nameTextStyle: { fontSize: axisNameFontSize, fontWeight: 'bold' },
       min: minVal,
       max: maxVal,
       splitLine: { show: true, lineStyle: { color: '#f0f0f0' } },
       axisLine: { lineStyle: { color: '#999' } },
-      axisLabel: { formatter: (v) => Math.round(v) },
+      axisLabel: { fontSize: axisLabelFontSize, formatter: (v) => Math.round(v) },
     },
     // Quadrant background shading
     graphic: [
       // Left-top: 留美 (US high, CN low)
       {
         type: 'rect',
-        left: 80,
-        top: 80,
+        left: gridConfig.left,
+        top: gridConfig.top,
         shape: { width: '42%', height: '42%' },
         style: { fill: 'rgba(59,130,246,0.04)' },
         silent: true,
@@ -115,8 +138,8 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
       // Right-top: 撕裂 (both high)
       {
         type: 'rect',
-        right: 60,
-        top: 80,
+        right: gridConfig.right,
+        top: gridConfig.top,
         shape: { width: '42%', height: '42%' },
         style: { fill: 'rgba(168,85,247,0.04)' },
         silent: true,
@@ -125,8 +148,8 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
       // Left-bottom: 双输 (both low)
       {
         type: 'rect',
-        left: 80,
-        bottom: 60,
+        left: gridConfig.left,
+        bottom: gridConfig.bottom,
         shape: { width: '42%', height: '42%' },
         style: { fill: 'rgba(107,114,128,0.04)' },
         silent: true,
@@ -135,8 +158,8 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
       // Right-bottom: 回国 (CN high, US low)
       {
         type: 'rect',
-        right: 60,
-        bottom: 60,
+        right: gridConfig.right,
+        bottom: gridConfig.bottom,
         shape: { width: '42%', height: '42%' },
         style: { fill: 'rgba(239,68,68,0.04)' },
         silent: true,
@@ -166,16 +189,16 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
         label: {
           show: true,
           formatter: '{b}',
-          fontSize: 13,
+          fontSize: quadrantLabelFontSize,
           color: '#bbb',
           fontWeight: 'bold',
         },
         tooltip: { show: false },
         data: [
-          { name: '坚定留美派', value: [minVal + 8, maxVal - 5] },
-          { name: '果断回国派', value: [maxVal - 8, minVal + 5] },
-          { name: '跨国撕裂型', value: [maxVal - 8, maxVal - 5] },
-          { name: '破局重组派', value: [minVal + 8, minVal + 5] },
+          { name: '坚定留美派', value: [minVal + (isMobile ? 5 : 8), maxVal - 5] },
+          { name: '果断回国派', value: [maxVal - (isMobile ? 5 : 8), minVal + 5] },
+          { name: '跨国撕裂型', value: [maxVal - (isMobile ? 5 : 8), maxVal - 5] },
+          { name: '破局重组派', value: [minVal + (isMobile ? 5 : 8), minVal + 5] },
         ],
       },
       // Background scatter dots per quadrant
@@ -184,7 +207,7 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
       {
         type: 'effectScatter',
         name: '你的位置',
-        symbolSize: 14,
+        symbolSize: userSymbolSize,
         rippleEffect: { brushType: 'stroke', scale: 2.5, period: 4 },
         itemStyle: {
           color: userColor,
@@ -197,7 +220,7 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
           show: true,
           position: 'right',
           formatter: '你的位置',
-          fontSize: 13,
+          fontSize: userLabelFontSize,
           fontWeight: 'bold',
           color: userColor,
         },
@@ -210,7 +233,7 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
   return (
     <ReactECharts
       option={option}
-      style={{ height: 560, width: '100%' }}
+      style={{ height: isMobile ? 360 : 560, width: '100%' }}
       opts={{ renderer: 'canvas' }}
     />
   );

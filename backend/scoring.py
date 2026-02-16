@@ -1,19 +1,19 @@
-"""计分引擎：权重映射、总分计算、象限判定、诊断话术"""
+"""V2 计分引擎：权重映射、总分计算、象限判定、诊断话术"""
 
-from questions import get_age_scores, get_dual_scores, get_option_scores
+from questions import get_dual_scores, get_option_scores
 
-# 权重 -> 乘数映射
+# 权重 -> 乘数映射 (V2)
 WEIGHT_MULTIPLIER = {
-    5: 1.7,   # 核心诉求
-    4: 1.2,   # 比较看重
-    3: 1.0,   # 一般
-    2: 0.8,   # 不太看重
-    1: 0.3,   # 无所谓
+    1: 1.0,    # 不在乎
+    2: 1.25,   # 不太看重
+    3: 1.5,    # 一般
+    4: 1.75,   # 比较看重
+    5: 2.0,    # 核心诉求
 }
 
-# 26 题，每题 base 1-5，multiplier 0.3-1.7
-# 中立基准 = 26题 × base3 × multiplier1.0 = 78
-THRESHOLD = 78.0
+# 29 题，每题 base 3（中立），multiplier 1.5（默认权重3）
+# 中立基准 = 29 × 3 × 1.5 = 130.5
+THRESHOLD = 130.5
 
 DIAGNOSIS = {
     "us_high_cn_low": (
@@ -38,12 +38,8 @@ DIAGNOSIS = {
     ),
 }
 
-# 年龄题固定权重
-AGE_AUTO_WEIGHT = 3
-
 
 def calculate_scores(
-    age: int,
     dual_answers: list[dict],
     single_answers: list[dict],
 ) -> dict:
@@ -51,18 +47,11 @@ def calculate_scores(
     计算 US / CN 总分并判定象限。
 
     参数:
-        age: 用户年龄 (20+)
         dual_answers: [{"question_id": int, "us_tier": int, "cn_tier": int, "weight": int}]
         single_answers: [{"question_id": int, "selected_option": str, "weight": int}]
     """
     us_total = 0.0
     cn_total = 0.0
-
-    # 年龄题计分（自动权重）
-    us_base, cn_base = get_age_scores(age)
-    multiplier = WEIGHT_MULTIPLIER[AGE_AUTO_WEIGHT]
-    us_total += us_base * multiplier
-    cn_total += cn_base * multiplier
 
     # 双轴题计分
     for ans in dual_answers:
