@@ -27,3 +27,8 @@ export async function getScatterData() {
 export function getExportUrl(sessionId) {
   return `/api/export/${sessionId}`;
 }
+
+export async function getAIReport(sessionId) {
+  const res = await api.post(`/ai-report/${sessionId}`);
+  return res.data;
+}

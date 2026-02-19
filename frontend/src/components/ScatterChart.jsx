@@ -12,7 +12,7 @@ const QUADRANT_LABELS = {
   us_high_cn_low: '坚定留美派',
   us_low_cn_high: '果断回国派',
   us_high_cn_high: '跨国撕裂型',
-  us_low_cn_low: '破局重组派',
+  us_low_cn_low: '两难探索型',
 };
 
 function useIsMobile() {
@@ -25,25 +25,47 @@ function useIsMobile() {
   return isMobile;
 }
 
-export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
+export default function ScatterChart({ chartData, quadrant, allPoints = [], exportMode = false }) {
   const { us_score, cn_score, threshold } = chartData;
   const userColor = QUADRANT_COLORS[quadrant] || '#3b82f6';
-  const isMobile = useIsMobile();
+  const rawIsMobile = useIsMobile();
+  // In export mode, always use desktop dimensions regardless of screen size
+  const isMobile = exportMode ? false : rawIsMobile;
 
-  // Group all historical points by quadrant
+  // ---------- Trim outliers: drop top/bottom 3 by US score and CN score ----------
+  const TRIM_N = 3;
+  let filtered = allPoints;
+  if (allPoints.length > TRIM_N * 4) {
+    const byUs = [...allPoints].sort((a, b) => a.us_score - b.us_score);
+    const byCn = [...allPoints].sort((a, b) => a.cn_score - b.cn_score);
+    const outlierSet = new Set();
+    // Bottom 3 and top 3 by US score
+    for (let i = 0; i < TRIM_N; i++) {
+      outlierSet.add(byUs[i]);
+      outlierSet.add(byUs[byUs.length - 1 - i]);
+    }
+    // Bottom 3 and top 3 by CN score
+    for (let i = 0; i < TRIM_N; i++) {
+      outlierSet.add(byCn[i]);
+      outlierSet.add(byCn[byCn.length - 1 - i]);
+    }
+    filtered = allPoints.filter((pt) => !outlierSet.has(pt));
+  }
+
+  // Group filtered points by quadrant
   const grouped = {};
   for (const q of Object.keys(QUADRANT_COLORS)) {
     grouped[q] = [];
   }
-  for (const pt of allPoints) {
+  for (const pt of filtered) {
     if (grouped[pt.quadrant]) {
       grouped[pt.quadrant].push([pt.cn_score, pt.us_score]);
     }
   }
 
-  // Compute axis range from all data (round to integers)
-  const allUs = allPoints.map((p) => p.us_score).concat([us_score]);
-  const allCn = allPoints.map((p) => p.cn_score).concat([cn_score]);
+  // Compute axis range from filtered data + user point
+  const allUs = filtered.map((p) => p.us_score).concat([us_score]);
+  const allCn = filtered.map((p) => p.cn_score).concat([cn_score]);
   const minVal = Math.floor(Math.max(0, Math.min(...allUs, ...allCn) - 10));
   const maxVal = Math.ceil(Math.max(...allUs, ...allCn) + 10);
 
@@ -62,8 +84,8 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
 
   // Responsive sizes
   const gridConfig = isMobile
-    ? { left: 45, right: 20, top: 60, bottom: 75 }
-    : { left: 80, right: 60, top: 80, bottom: 100 };
+    ? { left: 45, right: 25, top: 55, bottom: 85 }
+    : { left: 60, right: 60, top: 80, bottom: 145 };
 
   const titleFontSize = isMobile ? 14 : 18;
   const subtextFontSize = isMobile ? 10 : 12;
@@ -104,7 +126,7 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
     xAxis: {
       name: isMobile ? '中国 →' : '中国吸引力 →',
       nameLocation: 'middle',
-      nameGap: isMobile ? 28 : 45,
+      nameGap: isMobile ? 24 : 30,
       nameTextStyle: { fontSize: axisNameFontSize, fontWeight: 'bold' },
       min: minVal,
       max: maxVal,
@@ -113,10 +135,14 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
       axisLabel: { fontSize: axisLabelFontSize, formatter: (v) => Math.round(v) },
     },
     yAxis: {
-      name: isMobile ? '↑ 美国' : '↑ 美国吸引力',
-      nameLocation: 'middle',
-      nameGap: isMobile ? 30 : 50,
-      nameTextStyle: { fontSize: axisNameFontSize, fontWeight: 'bold' },
+      name: isMobile ? '美国 ↑' : '美国吸引力 ↑',
+      nameLocation: 'end',
+      nameGap: 15,
+      nameTextStyle: {
+        fontSize: axisNameFontSize,
+        fontWeight: 'bold',
+        align: 'left',
+      },
       min: minVal,
       max: maxVal,
       splitLine: { show: true, lineStyle: { color: '#f0f0f0' } },
@@ -130,7 +156,7 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
         type: 'rect',
         left: gridConfig.left,
         top: gridConfig.top,
-        shape: { width: '42%', height: '42%' },
+        shape: { width: '40%', height: '40%' },
         style: { fill: 'rgba(59,130,246,0.04)' },
         silent: true,
         z: -1,
@@ -140,17 +166,17 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
         type: 'rect',
         right: gridConfig.right,
         top: gridConfig.top,
-        shape: { width: '42%', height: '42%' },
+        shape: { width: '40%', height: '40%' },
         style: { fill: 'rgba(168,85,247,0.04)' },
         silent: true,
         z: -1,
       },
-      // Left-bottom: 双输 (both low)
+      // Left-bottom: 两难 (both low)
       {
         type: 'rect',
         left: gridConfig.left,
         bottom: gridConfig.bottom,
-        shape: { width: '42%', height: '42%' },
+        shape: { width: '40%', height: '40%' },
         style: { fill: 'rgba(107,114,128,0.04)' },
         silent: true,
         z: -1,
@@ -160,7 +186,7 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
         type: 'rect',
         right: gridConfig.right,
         bottom: gridConfig.bottom,
-        shape: { width: '42%', height: '42%' },
+        shape: { width: '40%', height: '40%' },
         style: { fill: 'rgba(239,68,68,0.04)' },
         silent: true,
         z: -1,
@@ -198,7 +224,7 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
           { name: '坚定留美派', value: [minVal + (isMobile ? 5 : 8), maxVal - 5] },
           { name: '果断回国派', value: [maxVal - (isMobile ? 5 : 8), minVal + 5] },
           { name: '跨国撕裂型', value: [maxVal - (isMobile ? 5 : 8), maxVal - 5] },
-          { name: '破局重组派', value: [minVal + (isMobile ? 5 : 8), minVal + 5] },
+          { name: '两难探索型', value: [minVal + (isMobile ? 5 : 8), minVal + 5] },
         ],
       },
       // Background scatter dots per quadrant
@@ -223,6 +249,10 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
           fontSize: userLabelFontSize,
           fontWeight: 'bold',
           color: userColor,
+          textBorderColor: '#fff',
+          textBorderWidth: 3,
+          textShadowColor: 'rgba(0,0,0,0.15)',
+          textShadowBlur: 4,
         },
         z: 10,
         data: [[cn_score, us_score]],
@@ -230,10 +260,13 @@ export default function ScatterChart({ chartData, quadrant, allPoints = [] }) {
     ],
   };
 
+  // Export mode uses taller height so the chart fills a 3:4 image nicely
+  const chartHeight = exportMode ? 920 : (isMobile ? 420 : 780);
+
   return (
     <ReactECharts
       option={option}
-      style={{ height: isMobile ? 360 : 560, width: '100%' }}
+      style={{ height: chartHeight, width: '100%' }}
       opts={{ renderer: 'canvas' }}
     />
   );

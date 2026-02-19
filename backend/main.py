@@ -1,6 +1,7 @@
+import os
 import uuid
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from sqlalchemy.orm import Session as DBSession
@@ -11,6 +12,7 @@ from questions import get_questions_for_frontend
 from schemas import ResultResponse, SubmitRequest, SubmitResponse, ChartData, ScatterPointOut
 from scoring import calculate_scores
 from export import generate_pdf
+from ai_report import build_prompt, call_openai, check_rate_limit, record_rate_limit, get_rate_limit_remaining, get_aggregate_stats
 
 # 创建表
 Base.metadata.create_all(bind=engine)
@@ -147,3 +149,41 @@ def export_pdf(session_id: str, db: DBSession = Depends(get_db)):
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=report_{session_id[:8]}.pdf"},
     )
+
+
+@app.post("/api/ai-report/{session_id}")
+async def get_ai_report(session_id: str, request: Request, db: DBSession = Depends(get_db)):
+    """生成 AI 个性化分析报告"""
+    # Feature flag
+    if os.environ.get("AI_REPORT_ENABLED", "false").lower() != "true":
+        raise HTTPException(status_code=403, detail="AI report feature is not enabled")
+
+    # Rate limiting by IP
+    client_ip = request.headers.get("X-Real-IP") or request.client.host
+    if not check_rate_limit(client_ip):
+        remaining = get_rate_limit_remaining(client_ip)
+        raise HTTPException(status_code=429, detail=f"请求过于频繁，请 {remaining // 60} 分钟后再试。")
+
+    # Fetch session and answers
+    session = db.query(Session).filter(Session.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    answers = db.query(Answer).filter(Answer.session_id == session_id).all()
+    if not answers:
+        raise HTTPException(status_code=404, detail="No answers found")
+
+    # Build prompt and call OpenAI
+    aggregate_stats = get_aggregate_stats(db)
+    system_prompt, user_prompt = build_prompt(session, answers, aggregate_stats)
+
+    try:
+        report_text = await call_openai(system_prompt, user_prompt)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"AI 服务调用失败: {str(e)}")
+
+    # Only record rate limit after successful generation
+    record_rate_limit(client_ip)
+
+    disclaimer = "\n\n——\n以上内容完全由 AI 生成，仅供娱乐参考。请注意鉴别，并结合自身实际情况与更多因素综合考量。"
+    return {"report": report_text + disclaimer}

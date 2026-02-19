@@ -37,3 +37,11 @@ npm-debug.log*
 
 # Generated files
 decision_matrix_scatter.png
+
+# Analysis charts and generated notebooks
+analysis/charts/
+analysis/v2_analysis_executed.ipynb
+analysis/summary.txt
+
+# Nginx backup
+nginx.conf.bak

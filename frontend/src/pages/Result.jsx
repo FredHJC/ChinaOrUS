@@ -1,10 +1,10 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { Button, Card, Typography, Space, Spin, Tag, QRCode, message } from 'antd';
-import { CameraOutlined, RedoOutlined, GlobalOutlined, HomeOutlined } from '@ant-design/icons';
+import { Button, Card, Typography, Space, Spin, Tag, QRCode, Modal, message } from 'antd';
+import { CameraOutlined, RedoOutlined, GlobalOutlined, HomeOutlined, FileTextOutlined } from '@ant-design/icons';
 import html2canvas from 'html2canvas';
 import ScatterChart from '../components/ScatterChart';
-import { getResult, getScatterData } from '../api';
+import { getResult, getScatterData, getAIReport } from '../api';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -24,6 +24,10 @@ export default function Result() {
   const [loading, setLoading] = useState(!location.state);
   const [exporting, setExporting] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [showDisclaimer, setShowDisclaimer] = useState(true);
+  const [aiReport, setAiReport] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(null);
   const exportRef = useRef(null);
 
   useEffect(() => {
@@ -108,6 +112,25 @@ export default function Result() {
     link.click();
   };
 
+  const handleAIReport = async () => {
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const res = await getAIReport(sessionId || data.session_id);
+      setAiReport(res.report);
+    } catch (err) {
+      if (err.response?.status === 429) {
+        setAiError('你已在一小时内使用过 AI 分析，请稍后再试。');
+      } else if (err.response?.status === 403) {
+        setAiError('AI 分析功能暂未开放。');
+      } else {
+        setAiError('AI 分析生成失败，请稍后重试。');
+      }
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -126,6 +149,20 @@ export default function Result() {
       margin: '0 auto',
       padding: '32px 16px',
     }}>
+      <Modal
+        title="温馨提示"
+        open={showDisclaimer}
+        onOk={() => setShowDisclaimer(false)}
+        onCancel={() => setShowDisclaimer(false)}
+        okText="我已知晓，查看结果"
+        cancelButtonProps={{ style: { display: 'none' } }}
+        closable={false}
+        maskClosable={false}
+      >
+        <p>1. 本测试面向已在美华人群体，打分机制会天然地偏向留美方向，请注意结合自身实际情况理性看待结果。</p>
+        <p>2. 本测试仅供娱乐参考，结果不构成任何专业建议。人生决策请综合考虑更多因素。</p>
+      </Modal>
+
       <Title level={2} style={{ textAlign: 'center', marginBottom: 32 }}>
         测试结果
       </Title>
@@ -140,12 +177,13 @@ export default function Result() {
       <div ref={exportRef} style={{ background: '#fff', padding: 16 }}>
         {/* 导出时显示的标题 */}
         <div style={{ textAlign: 'center', marginBottom: 16 }}>
-          <Title level={3} style={{ margin: 0 }}>留学生去留决策量表 V2 - 测试报告</Title>
+          <Title level={3} style={{ margin: 0 }}>留学生去留决策量表 V2</Title>
+          <Text style={{ fontSize: 15, color: '#666' }}>测试报告</Text>
         </div>
 
         {/* 四象限图 */}
         <Card style={{ marginBottom: 24, borderRadius: 12 }}>
-          <ScatterChart chartData={data.chart_data} quadrant={data.quadrant} allPoints={allPoints} />
+          <ScatterChart chartData={data.chart_data} quadrant={data.quadrant} allPoints={allPoints} exportMode={exporting} />
         </Card>
 
         {/* 诊断结果 */}
@@ -221,7 +259,54 @@ export default function Result() {
         >
           重新测试
         </Button>
+        {!aiReport && (
+          <Button
+            size="large"
+            icon={<FileTextOutlined />}
+            loading={aiLoading}
+            onClick={handleAIReport}
+            style={{
+              background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+              border: 'none',
+              color: '#fff',
+            }}
+          >
+            {aiLoading ? '正在生成 AI 报告...' : '阅读 AI 报告'}
+          </Button>
+        )}
       </Space>
+
+      {/* AI 分析报告 */}
+      {aiReport && (
+        <Card
+          style={{
+            marginTop: 24,
+            borderRadius: 12,
+            borderLeft: '4px solid #f5576c',
+          }}
+          title={
+            <Space>
+              <FileTextOutlined />
+              <span>AI 个性化分析报告</span>
+            </Space>
+          }
+        >
+          <Paragraph style={{ fontSize: 15, lineHeight: 1.8, whiteSpace: 'pre-wrap', margin: 0 }}>
+            {aiReport}
+          </Paragraph>
+          <div style={{ marginTop: 16 }}>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              本报告由 AI 生成，仅供参考。
+            </Text>
+          </div>
+        </Card>
+      )}
+
+      {aiError && (
+        <div style={{ textAlign: 'center', marginTop: 16 }}>
+          <Text type="danger">{aiError}</Text>
+        </div>
+      )}
 
       {/* 图片预览弹层 */}
       {previewUrl && (

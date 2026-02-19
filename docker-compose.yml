@@ -10,6 +10,10 @@ services:
       - "8080:8080"
     volumes:
       - ./backend/decision_matrix_v2.db:/app/decision_matrix_v2.db
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - AI_REPORT_ENABLED=${AI_REPORT_ENABLED:-false}
     restart: unless-stopped
     networks:
       - chinaorus-network
